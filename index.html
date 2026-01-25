@@ -4,278 +4,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALL CAPS Games | High-Quality Mobile Games</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap"
-        rel="stylesheet">
+    <title>iKristoffer</title>
+    <link rel="shortcut icon" href="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Logo/logo_favicon.png" type="image/png" />
     <style>
-        :root {
-            --primary-color: #ffffff;
-            --accent-color: #ff4757;
-            /* A vibrant gaming red/pink */
-            --bg-color: #0a0a0a;
-            --card-bg: #1a1a1a;
-            --text-muted: #aaaaaa;
-        }
-
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--primary-color);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        h1,
-        h2,
-        h3,
-        .logo {
-            font-family: 'Montserrat', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* Header & Navigation */
-        header {
-            padding: 2rem;
+            font-family: Arial, sans-serif;
+            background-color: rgb(49, 66, 40);
+            background-image: url('https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/bg2.png');
+            background-size: cover;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 900;
-            border: 4px solid var(--primary-color);
-            padding: 5px 15px;
-            display: inline-block;
-        }
-
-        nav a {
-            color: var(--primary-color);
-            text-decoration: none;
-            margin-left: 2rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            transition: color 0.3s;
-        }
-
-        nav a:hover {
-            color: var(--accent-color);
-        }
-
-        /* Hero / About Section */
-        .hero {
+        .container {
             text-align: center;
-            padding: 100px 20px;
-            max-width: 800px;
-            margin: 0 auto;
+            padding: 80px;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .hero h1 {
-            font-size: 3.5rem;
+        h1 {
+            color: #333;
+            margin-top: 0px;
+        }
+
+        img {
+            max-width: 30%;
+            height: auto;
+            cursor: pointer;
+            
+        }
+
+        #mainImage {
+            /* Your animation styles here */
+            animation: mainLogoAnimation 2s ease-in-out forwards;
+        }
+
+        @keyframes mainLogoAnimation {
+        from 
+        {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to 
+        {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        }
+
+        /* Links section */
+        .links-section {
+            background-color: rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            margin-top: center;
+        }
+
+        .links-header {
+            color: #fff;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            margin-bottom: 10px;
+        }
+
+        .links-section .links-logos {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .links-logo {
+            width: 200px;
+            margin: 5px;
+            border: 0px;
+            box-shadow: 0 0px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            animation: linksLogoAnimations 2s ease-in-out forwards;
+        }
+
+        @keyframes linksLogoAnimations {
+        from 
+        {
+          opacity: 0;
+        }
+        to 
+        {
+          opacity: 1;
+        }
+        }
+
+        .links-logo:hover {
+            box-shadow: 0 0px 12px rgba(0, 0, 0, 0.3);
+            transform: scale(1.1);
+            transition: transform 0.3s ease;
+        }
+
+        .links-item {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .links-text {
+            display: block;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+        }
+
+        .links-text:hover {
+            color: #FFA500;
+        }
+
+        /* About section */
+        .about-section {
+            background-color: #fff;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .about-header {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
             margin-bottom: 20px;
         }
 
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--text-muted);
+        .about-text {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
         }
 
-        /* Games Grid */
-        section {
-            padding: 80px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        @media (max-width: 720px) {
+            .container {
+                padding: 10px;
+            }
+
+            img {
+                max-width: 60%;
+                margin-top: 25px;
+                margin-bottom: 50px;
+            }
+
+            .links-section {
+            background-color: rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            margin-top: center;
         }
 
-        section h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 50px;
-            position: relative;
-        }
+            .links-logos {
+                flex-direction: row;
+                justify-content: space-around;
+            }
 
-        section h2::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 4px;
-            background: var(--accent-color);
-            margin: 15px auto 0;
-        }
+            .links-logo {
+                max-width: 100px;
+            }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-
-        .game-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .game-card:hover {
-            transform: translateY(-10px);
-        }
-
-        .game-img {
-            width: 100%;
-            height: 250px;
-            background: #333;
-            /* Placeholder for game art */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #555;
-        }
-
-        .game-card h3 {
+            .about-section {
+            background-color: #fff;
             padding: 20px;
-            font-size: 1.2rem;
-        }
-
-        /* Partners Section */
-        .partners-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 40px;
-            opacity: 0.6;
-        }
-
-        .partner-logo {
-            width: 150px;
-            height: 80px;
-            background: #222;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-
-        /* Contact & Footer */
-        .contact-box {
             text-align: center;
-            background: var(--card-bg);
-            padding: 50px;
-            border-radius: 20px;
         }
 
-        .contact-box a {
-            color: var(--accent-color);
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
-
-        footer {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Responsive styling */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            header {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            nav a {
-                margin: 0 10px;
-            }
         }
     </style>
+
 </head>
 
 <body>
+    <div class="container">
+        <img id="mainImage" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Logo/logo_medium.png" alt="logo" onclick="changeImage()">
+    </div>
 
-    <header>
-        <div class="logo">ALL CAPS</div>
-        <nav>
-            <a href="#games">Our Games</a>
-            <a href="#about">About</a>
-            <a href="#partners">Partners</a>
-            <a href="#contact">Contact</a>
-        </nav>
-    </header>
+    <!-- Links Section -->
+    <div class="links-section">
+        <div class="links-header">Links</div>
+        <div class="links-logos">
 
-    <main>
-        <section id="about" class="hero">
-            <h1>Welcome to <br>ALL CAPS Games!</h1>
-            <p>We are a passionate team dedicated to creating exciting and innovative games. Our mission is to deliver
-                high-quality entertainment that brings joy to players around the world.</p>
-        </section>
-
-        <section id="games">
-            <h2>Our Games</h2>
-            <div class="grid">
-                <div class="game-card">
-                    <div class="game-img">BLOCK AMOK ART</div>
-                    <h3>Block Amok</h3>
-                </div>
-                <div class="game-card">
-                    <div class="game-img">JAWSOME ART</div>
-                    <h3>Jawsome</h3>
-                </div>
-                <div class="game-card">
-                    <div class="game-img">DISCO FLIP ART</div>
-                    <h3>Disco Flip</h3>
-                </div>
-                <div class="game-card">
-                    <div class="game-img">CUTE VS EVIL ART</div>
-                    <h3>Cute vs. Evil</h3>
-                </div>
+            <div class="links-item">
+                <a href="https://www.linkedin.com/in/kristofferbjohansen/" target="_blank" rel="noopener noreferrer">
+                    <img class="links-logo" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/linkedin.png" alt="LinkedIn">
+                    <span class="links-text">LinkedIn</span>
+                </a>
             </div>
-        </section>
 
-        <section id="partners">
-            <h2>Previous Partners</h2>
-            <div class="partners-grid">
-                <div class="partner-logo">Partner 1</div>
-                <div class="partner-logo">Partner 2</div>
-                <div class="partner-logo">Partner 3</div>
-                <div class="partner-logo">Partner 4</div>
+            <div class="links-item">
+                <a href="https://www.allcapsgames.com" target="_blank" rel="noopener noreferrer">
+                    <img class="links-logo" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/allcaps_logo.png" alt="ALLCAPS">
+                    <span class="links-text">ALL CAPS Games</span>
+                </a>
             </div>
-        </section>
 
-        <section id="contact">
-            <div class="contact-box">
-                <h2>Get In Touch</h2>
-                <p>Have a question or a partnership proposal?</p>
-                <br>
-                <a href="mailto:contact@allcapsgames.com">contact@allcapsgames.com</a>
-            </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
-    <footer>
-        <p>&copy; 2024 ALL CAPS Games. All Rights Reserved.</p>
-    </footer>
+    <!-- About Section -->
+    <div class="about-section">
+    <div class="about-header">About Me</div>
+    <p id="typewriter-text" class="about-text">
+        
+    </p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var aboutText = document.getElementById("typewriter-text");
+
+        var sentences = [
+        "...",
+        "Hmm...",
+        "I should probably add something interesting to this section...",
+        "I'll probably add something tomorrow...",
+        "Well, let's see...",
+        "Maybe I'll come up with a brilliant idea for this part...",
+        "Wondering what to write here...",
+        "This space needs a touch of creativity...",
+        "A little mystery won't hurt, right?",
+        "Adding a dash of intrigue for the curious minds...",
+        "Still brainstorming...",
+        "Just trying to fill up space...",
+        "Well, here goes nothing!",
+        "Let me think...",
+        "What should I write here?",
+        ];
+
+
+        function typewriterEffect(sentence, callback) {
+            var index = 0;
+
+            function typeCharacter() {
+                aboutText.textContent += sentence[index++];
+                if (index < sentence.length) {
+                    setTimeout(typeCharacter, 70); // Adjust the delay (50ms in this case)
+                } else {
+                    setTimeout(function () {
+                        deleteCharacters(sentence, callback);
+                    }, 1000); // Delay before starting deletion
+                }
+            }
+
+            typeCharacter();
+        }
+
+        function deleteCharacters(sentence, callback) {
+            var index = sentence.length;
+
+            function deleteCharacter() {
+                aboutText.textContent = sentence.substring(0, index--);
+                if (index >= 0) {
+                    setTimeout(deleteCharacter, 30); // Adjust the delay (50ms in this case)
+                } else {
+                    // Call the callback function when deletion is complete
+                    if (callback) {
+                        callback();
+                    }
+                }
+            }
+
+            deleteCharacter();
+        }
+
+        function switchSentence() {
+            // Randomly select a sentence from the array
+            var randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
+
+            // Call the typewriter effect for the new sentence
+            typewriterEffect(randomSentence, switchSentence);
+        }
+
+        // Start the typewriter effect for the first sentence
+        switchSentence();
+    });
+</script>
+
+<script>
+ function changeImage() {
+    var body = document.body;
+    
+    // Define colors
+    var color1 = 'rgb(139, 165, 100)'; // light green
+    var color2 = 'rgb(49, 66, 40)';    // green
+
+    var currentColor = window.getComputedStyle(body).getPropertyValue('background-color');
+
+    // Toggle between two colors
+    var newColor = (currentColor === color1) ? color2 : color1;
+
+    body.style.transition = 'background-color 1s ease';
+    body.style.backgroundColor = newColor;
+}
+</script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NYWBRJK60P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-NYWBRJK60P');
+    </script>
+
+    
 
 </body>
 
-</html>
+
+
+
