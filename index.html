@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALL CAPS Games | High-Quality Mobile Games</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ffffff;
+            --accent-color: #ff4757;
+            /* A vibrant gaming red/pink */
+            --bg-color: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --text-muted: #aaaaaa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Header & Navigation */
+        header {
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            border: 4px solid var(--primary-color);
+            padding: 5px 15px;
+            display: inline-block;
+        }
+
+        nav a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Hero / About Section */
+        .hero {
+            text-align: center;
+            padding: 100px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        /* Games Grid */
+        section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        section h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--accent-color);
+            margin: 15px auto 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .game-img {
+            width: 100%;
+            height: 250px;
+            background: #333;
+            /* Placeholder for game art */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .game-card h3 {
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+
+        /* Partners Section */
+        .partners-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            opacity: 0.6;
+        }
+
+        .partner-logo {
+            width: 150px;
+            height: 80px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        /* Contact & Footer */
+        .contact-box {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 20px;
+        }
+
+        .contact-box a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            nav a {
+                margin: 0 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">ALL CAPS</div>
+        <nav>
+            <a href="#games">Our Games</a>
+            <a href="#about">About</a>
+            <a href="#partners">Partners</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="about" class="hero">
+            <h1>Welcome to <br>ALL CAPS Games!</h1>
+            <p>We are a passionate team dedicated to creating exciting and innovative games. Our mission is to deliver
+                high-quality entertainment that brings joy to players around the world.</p>
+        </section>
+
+        <section id="games">
+            <h2>Our Games</h2>
+            <div class="grid">
+                <div class="game-card">
+                    <div class="game-img">BLOCK AMOK ART</div>
+                    <h3>Block Amok</h3>
+                </div>
+                <div class="game-card">
+                    <div class="game-img">JAWSOME ART</div>
+                    <h3>Jawsome</h3>
+                </div>
+                <div class="game-card">
+                    <div class="game-img">DISCO FLIP ART</div>
+                    <h3>Disco Flip</h3>
+                </div>
+                <div class="game-card">
+                    <div class="game-img">CUTE VS EVIL ART</div>
+                    <h3>Cute vs. Evil</h3>
+                </div>
+            </div>
+        </section>
+
+        <section id="partners">
+            <h2>Previous Partners</h2>
+            <div class="partners-grid">
+                <div class="partner-logo">Partner 1</div>
+                <div class="partner-logo">Partner 2</div>
+                <div class="partner-logo">Partner 3</div>
+                <div class="partner-logo">Partner 4</div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="contact-box">
+                <h2>Get In Touch</h2>
+                <p>Have a question or a partnership proposal?</p>
+                <br>
+                <a href="mailto:contact@allcapsgames.com">contact@allcapsgames.com</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ALL CAPS Games. All Rights Reserved.</p>
+    </footer>
+
+</body>
+
+</html>
