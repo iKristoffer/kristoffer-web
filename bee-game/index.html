@@ -6,8 +6,8 @@
     <title>Havebi — a summer on a farm</title>
     <meta name="description" content="Fly a bee around a farm for a summer." />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐝</text></svg>" />
-    <script type="module" crossorigin src="./assets/index-BlMH_mJa.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BjX8XSGn.css">
+    <script type="module" crossorigin src="./assets/index-BxY1MEEm.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DUTktpA5.css">
   </head>
   <body>
     <canvas id="viewport"></canvas>
@@ -19,6 +19,9 @@
         <span class="label">nectar</span>
       </div>
       <div id="hint"></div>
+      <button id="settings-button" type="button" aria-label="Settings" title="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
     </div>
 
     <div id="start-screen">
@@ -35,9 +38,59 @@
           <li>Hover close to a flower to drink</li>
         </ul>
         <button id="start-button" type="button">Take off</button>
+        <button id="start-settings" type="button" class="quiet-button">Settings</button>
         <p class="footnote">Press <kbd>Esc</kbd> to release the mouse.</p>
       </div>
     </div>
+
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog" class="card settings-card">
+        <h2 id="settings-title">Settings</h2>
+
+        <div class="settings-body">
+          <div class="setting">
+            <div class="setting-row">
+              <label for="sensitivity">Look sensitivity</label>
+              <output id="sensitivity-value" for="sensitivity">100%</output>
+            </div>
+            <input id="sensitivity" type="range" min="0.3" max="2.5" step="0.05" value="1" />
+            <small>How far the view turns for a given movement of the mouse or thumb.</small>
+          </div>
+
+          <label class="setting toggle" for="invert-y">
+            <input id="invert-y" type="checkbox" />
+            <span>
+              <strong>Invert vertical look</strong>
+              <small>Pull down to look up, as on a flight stick.</small>
+            </span>
+          </label>
+
+          <label class="setting toggle" for="reduced-motion">
+            <input id="reduced-motion" type="checkbox" />
+            <span>
+              <strong>Reduced motion</strong>
+              <small>Holds the view steady at speed and calms the wind.</small>
+            </span>
+          </label>
+
+          <label class="setting toggle" for="sound-on">
+            <input id="sound-on" type="checkbox" />
+            <span>
+              <strong>Sound</strong>
+              <small>
+                The wing buzz and the sip.
+                <span class="key-only"><kbd>M</kbd> toggles it too.</span>
+              </small>
+            </span>
+          </label>
+        </div>
+
+        <div class="settings-actions">
+          <button id="settings-reset" type="button" class="quiet-button">Reset</button>
+          <button id="settings-done" type="submit">Done</button>
+        </div>
+      </form>
+    </dialog>
 
   </body>
 </html>
