@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Nordlysets Spor</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+    </script>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="ov-storm" class="overlay"></div>
+    <div id="ov-frost" class="overlay"></div>
+    <div id="ov-hurt" class="overlay"></div>
+
+    <div id="hud" class="hidden">
+        <div id="left">
+            <div class="stat" id="st-health"><span class="ico">❤️</span><div class="bar"><i></i></div></div>
+            <div class="stat" id="st-warm"><span class="ico">🔥</span><div class="bar"><i></i></div></div>
+            <div class="stat" id="st-food"><span class="ico">🍖</span><div class="bar"><i></i></div></div>
+            <div class="stat" id="st-dog"><span class="ico">🐕</span><div class="bar"><i></i></div><span id="dog-mood"></span></div>
+            <div id="objective"></div>
+            <div id="inv-strip"></div>
+        </div>
+        <div id="compass"><div id="arrow">➤</div><span id="cdist"></span></div>
+        <div id="info"><div id="day"></div><div id="weather"></div><div id="cairns"></div></div>
+    </div>
+
+    <div id="floaters"></div>
+    <div id="toast"></div>
+    <div id="joy"><div id="joy-knob"></div></div>
+
+    <div id="buttons" class="hidden">
+        <button id="btn-action" class="round big"><span class="ic">✋</span><span class="lbl">—</span></button>
+        <button id="btn-craft" class="round"><span class="ic">🔨</span><small>Byg</small></button>
+        <button id="btn-inv" class="round"><span class="ic">🎒</span><small>Taske</small></button>
+        <button id="btn-eat" class="round"><span class="ic">🍖</span><small>Spis</small></button>
+        <div id="small-btns">
+            <button id="btn-zoom" class="round tiny" title="Zoom">🔍</button>
+            <button id="btn-fx" class="round tiny" title="Retro-filter">🎞️</button>
+            <button id="btn-sound" class="round tiny" title="Lyd">🔊</button>
+        </div>
+    </div>
+
+    <div id="panel-craft" class="panel hidden">
+        <div class="phead"><h2>🔨 Byg og sy</h2><button class="close">✕</button></div>
+        <div id="recipes"></div>
+    </div>
+    <div id="panel-inv" class="panel hidden">
+        <div class="phead"><h2>🎒 Taske</h2><button class="close">✕</button></div>
+        <div id="inv-list"></div>
+    </div>
+    <div id="panel-journal" class="panel hidden">
+        <div class="phead"><h2 id="j-title">📜 Varde</h2></div>
+        <p id="j-text"></p>
+        <button id="j-ok" class="primary">Fortsæt</button>
+    </div>
+
+    <div id="screen-start" class="screen">
+        <div class="title-wrap">
+            <h1>Nordlysets Spor</h1>
+            <div class="sub">Et overlevelseseventyr på den grønlandske is</div>
+            <p class="intro">
+                Grønland, 1921. Den 5. Thuleekspedition gør klar til den lange rejse vestpå over isen.
+                Du er <b>Arnarulunnguaq</b>. Sammen med din slædehund <b>Siku</b> skal du samle drivtømmer,
+                sten og knogler, fange sæler, sy skindtøj og bygge iglo — og holde varmen gennem snestorme
+                og lange nætter under nordlyset. Find de fem varder, der viser vejen.
+            </p>
+            <div class="controls">
+                <div><b>Mobil:</b> træk hvor som helst for at gå · store knap = handling</div>
+                <div><b>Tastatur:</b> WASD/pile · E/mellemrum = handling · C = byg · I = taske · F = spis</div>
+            </div>
+            <button id="btn-start" class="primary">Begynd rejsen</button>
+            <p class="note">
+                Fiktion, løst inspireret af Arnarulunnguaq, der sammen med Knud Rasmussen og Miteq rejste
+                med hundeslæde over det arktiske Nordamerika til Alaska under 5. Thuleekspedition (1921–24).
+            </p>
+        </div>
+    </div>
+    <div id="screen-end" class="screen hidden"><div class="title-wrap" id="end-content"></div></div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
