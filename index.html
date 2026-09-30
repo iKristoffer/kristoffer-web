@@ -1,324 +1,554 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="da">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iKristoffer</title>
-    <link rel="shortcut icon" href="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Logo/logo_favicon.png" type="image/png" />
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: rgb(49, 66, 40);
-            background-image: url('https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/bg2.png');
-            background-size: cover;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .container {
-            text-align: center;
-            padding: 80px;
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        h1 {
-            color: #333;
-            margin-top: 0px;
-        }
-
-        img {
-            max-width: 30%;
-            height: auto;
-            cursor: pointer;
-            
-        }
-
-        #mainImage {
-            /* Your animation styles here */
-            animation: mainLogoAnimation 2s ease-in-out forwards;
-        }
-
-        @keyframes mainLogoAnimation {
-        from 
-        {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to 
-        {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        }
-
-        /* Links section */
-        .links-section {
-            background-color: rgba(0, 0, 0, 0.15);
-            padding: 20px;
-            margin-top: center;
-        }
-
-        .links-header {
-            color: #fff;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-            margin-bottom: 10px;
-        }
-
-        .links-section .links-logos {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .links-logo {
-            width: 200px;
-            margin: 5px;
-            border: 0px;
-            box-shadow: 0 0px 12px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            animation: linksLogoAnimations 2s ease-in-out forwards;
-        }
-
-        @keyframes linksLogoAnimations {
-        from 
-        {
-          opacity: 0;
-        }
-        to 
-        {
-          opacity: 1;
-        }
-        }
-
-        .links-logo:hover {
-            box-shadow: 0 0px 12px rgba(0, 0, 0, 0.3);
-            transform: scale(1.1);
-            transition: transform 0.3s ease;
-        }
-
-        .links-item {
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .links-text {
-            display: block;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            color: #fff;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-            font-size: 14px;
-        }
-
-        .links-text:hover {
-            color: #FFA500;
-        }
-
-        /* About section */
-        .about-section {
-            background-color: #fff;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .about-header {
-            color: #333;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .about-text {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 720px) {
-            .container {
-                padding: 10px;
-            }
-
-            img {
-                max-width: 60%;
-                margin-top: 25px;
-                margin-bottom: 50px;
-            }
-
-            .links-section {
-            background-color: rgba(0, 0, 0, 0.15);
-            padding: 15px;
-            margin-top: center;
-        }
-
-            .links-logos {
-                flex-direction: row;
-                justify-content: space-around;
-            }
-
-            .links-logo {
-                max-width: 100px;
-            }
-
-            .about-section {
-            background-color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
-
-        }
-    </style>
-
-</head>
-
-<body>
-    <div class="container">
-        <img id="mainImage" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Logo/logo_medium.png" alt="logo" onclick="changeImage()">
-    </div>
-
-    <!-- Links Section -->
-    <div class="links-section">
-        <div class="links-header">Links</div>
-        <div class="links-logos">
-
-            <div class="links-item">
-                <a href="https://www.linkedin.com/in/kristofferbjohansen/" target="_blank" rel="noopener noreferrer">
-                    <img class="links-logo" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/linkedin.png" alt="LinkedIn">
-                    <span class="links-text">LinkedIn</span>
-                </a>
-            </div>
-
-            <div class="links-item">
-                <a href="https://www.allcapsgames.com" target="_blank" rel="noopener noreferrer">
-                    <img class="links-logo" src="https://filedn.eu/lSicfXqERmY83qHzlUAP4wm/iKristoffer/Images/allcaps_logo.png" alt="ALLCAPS">
-                    <span class="links-text">ALL CAPS Games</span>
-                </a>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- About Section -->
-    <div class="about-section">
-    <div class="about-header">About Me</div>
-    <p id="typewriter-text" class="about-text">
-        
-    </p>
-</div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        var aboutText = document.getElementById("typewriter-text");
-
-        var sentences = [
-        "...",
-        "Hmm...",
-        "I should probably add something interesting to this section...",
-        "I'll probably add something tomorrow...",
-        "Well, let's see...",
-        "Maybe I'll come up with a brilliant idea for this part...",
-        "Wondering what to write here...",
-        "This space needs a touch of creativity...",
-        "A little mystery won't hurt, right?",
-        "Adding a dash of intrigue for the curious minds...",
-        "Still brainstorming...",
-        "Just trying to fill up space...",
-        "Well, here goes nothing!",
-        "Let me think...",
-        "What should I write here?",
-        ];
-
-
-        function typewriterEffect(sentence, callback) {
-            var index = 0;
-
-            function typeCharacter() {
-                aboutText.textContent += sentence[index++];
-                if (index < sentence.length) {
-                    setTimeout(typeCharacter, 70); // Adjust the delay (50ms in this case)
-                } else {
-                    setTimeout(function () {
-                        deleteCharacters(sentence, callback);
-                    }, 1000); // Delay before starting deletion
-                }
-            }
-
-            typeCharacter();
-        }
-
-        function deleteCharacters(sentence, callback) {
-            var index = sentence.length;
-
-            function deleteCharacter() {
-                aboutText.textContent = sentence.substring(0, index--);
-                if (index >= 0) {
-                    setTimeout(deleteCharacter, 30); // Adjust the delay (50ms in this case)
-                } else {
-                    // Call the callback function when deletion is complete
-                    if (callback) {
-                        callback();
-                    }
-                }
-            }
-
-            deleteCharacter();
-        }
-
-        function switchSentence() {
-            // Randomly select a sentence from the array
-            var randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
-
-            // Call the typewriter effect for the new sentence
-            typewriterEffect(randomSentence, switchSentence);
-        }
-
-        // Start the typewriter effect for the first sentence
-        switchSentence();
-    });
-</script>
-
-<script>
- function changeImage() {
-    var body = document.body;
-    
-    // Define colors
-    var color1 = 'rgb(139, 165, 100)'; // light green
-    var color2 = 'rgb(49, 66, 40)';    // green
-
-    var currentColor = window.getComputedStyle(body).getPropertyValue('background-color');
-
-    // Toggle between two colors
-    var newColor = (currentColor === color1) ? color2 : color1;
-
-    body.style.transition = 'background-color 1s ease';
-    body.style.backgroundColor = newColor;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kristoffer — spil og apps</title>
+<meta name="description" content="Kristoffer bygger spil og apps: Nordlysets Spor, Ammehjerne, Block Amok og mere.">
+<meta name="theme-color" content="#0a1820">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kristoffer — spil og apps">
+<meta property="og:description" content="Nordlysets Spor, Ammehjerne, Block Amok og mere.">
+<meta property="og:url" content="https://kristoffer.dk/">
+<meta property="og:image" content="https://kristoffer.dk/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.png" type="image/png">
+<style>
+:root {
+  --bg: #0a1820;
+  --bg2: #0f222c;
+  --ink: #f4ead7;
+  --muted: #9fb3bd;
+  --line: rgba(244, 234, 215, .12);
+  --orange: #f29a38;
+  --sky: #86b4d6;
+  --radius: 28px;
+  --font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.6 var(--font); overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+img, video { display: block; max-width: 100%; height: auto; }
+
+/* ───────── Hero ───────── */
+.hero {
+  position: relative; height: 100vh; height: 100svh; min-height: 620px;
+  overflow: hidden; isolation: isolate;
+  background: linear-gradient(180deg, #050d13 0%, #0a1c27 38%, #16384a 68%, #3a4a48 84%, #b8702e 100%);
+}
+.layer { position: absolute; inset: 0; will-change: transform; }
+.aurora { mix-blend-mode: screen; filter: blur(60px); opacity: .55; }
+.aurora i {
+  position: absolute; border-radius: 50%; width: 70vw; height: 34vh;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(1) { left: -10vw; top: 6vh; background: radial-gradient(closest-side, rgba(70, 230, 170, .8), transparent); }
+.aurora i:nth-child(2) { right: -15vw; top: 14vh; background: radial-gradient(closest-side, rgba(150, 110, 255, .7), transparent); animation-duration: 24s; animation-delay: -6s; }
+.aurora i:nth-child(3) { left: 25vw; top: 0; width: 55vw; background: radial-gradient(closest-side, rgba(134, 180, 214, .6), transparent); animation-duration: 30s; animation-delay: -12s; }
+@keyframes drift { to { transform: translate3d(9vw, 5vh, 0) scale(1.15); } }
+.stars i {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff;
+  animation: twinkle 4s ease-in-out infinite;
+}
+@keyframes twinkle { 0%, 100% { opacity: .15; } 50% { opacity: .95; } }
+.glow {
+  background: radial-gradient(60% 40% at 50% 100%, rgba(242, 154, 56, .55), transparent 70%);
+}
+.mtn { width: 100%; height: 100%; }
+.mtn svg { position: absolute; left: 50%; translate: -50% 0; bottom: -2px; width: max(100%, 1100px); height: 52%; display: block; }
+.mtn.far svg { height: 62%; } .mtn.mid svg { height: 50%; } .mtn.near svg { height: 36%; }
+
+.hero-content {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 0 24px 12vh;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(40px) scale(.94); } }
+.hero h1 {
+  margin: 0 0 14px; font-size: clamp(2.8rem, 9vw, 6.4rem); line-height: 1; letter-spacing: -.035em; font-weight: 800;
+  animation: rise 1.4s .15s cubic-bezier(.2, .8, .2, 1) both;
+}
+.hero h1 span { background: linear-gradient(100deg, #ffd9a0, var(--orange) 45%, #ff8a5c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p {
+  margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.35rem); color: #d8e2e6; max-width: 30rem;
+  animation: rise 1.4s .3s cubic-bezier(.2, .8, .2, 1) both;
+}
+.cue {
+  position: absolute; left: 50%; bottom: 22px; translate: -50% 0; z-index: 3;
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(244,234,215,.3); backdrop-filter: blur(8px);
+  animation: nudge 2.2s ease-in-out infinite;
+}
+.cue svg { width: 18px; height: 18px; }
+@keyframes nudge { 50% { transform: translateY(6px); } }
+
+/* ───────── Projects ───────── */
+main { position: relative; z-index: 2; background: var(--bg); margin-top: -1px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+.section-head { padding: 88px 0 36px; }
+.eyebrow { font-size: .8rem; letter-spacing: .22em; text-transform: uppercase; color: var(--orange); font-weight: 700; }
+.section-head h2 { margin: 10px 0 10px; font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -.03em; line-height: 1.05; }
+.section-head p { margin: 0; color: var(--muted); max-width: 36rem; }
+
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; padding-bottom: 20px; }
+.card {
+  --accent: var(--orange);
+  position: relative; overflow: hidden; border-radius: var(--radius);
+  background: var(--bg2); border: 1px solid var(--line);
+  display: flex; flex-direction: column; isolation: isolate;
+  opacity: 0; transform: translateY(36px);
+  transition: opacity .9s cubic-bezier(.2, .8, .2, 1), transform .9s cubic-bezier(.2, .8, .2, 1), border-color .3s;
+}
+.card.in { opacity: 1; transform: none; }
+.card::after {  /* pointer glow */
+  content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%);
+}
+.card:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.card:hover::after { opacity: 1; }
+.c-wide { grid-column: span 12; min-height: 460px; justify-content: flex-end; }
+.c-half { grid-column: span 6; }
+.c-third { grid-column: span 6; }
+
+.info { position: relative; z-index: 3; padding: 26px 28px 30px; }
+.head { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.head h3 { margin: 0; font-size: 1.6rem; letter-spacing: -.02em; line-height: 1.1; }
+.head small { display: block; margin-top: 4px; color: var(--muted); font-size: .85rem; letter-spacing: .02em; }
+.info p { margin: 0 0 20px; color: #cbd8de; max-width: 34rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px;
+  background: var(--ink); color: #0a1820; font-weight: 700; font-size: .95rem;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 45%, transparent); background: #fff; }
+.btn svg { width: 16px; height: 16px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.ghost:hover { background: rgba(255,255,255,.06); box-shadow: none; }
+.tag { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); vertical-align: middle; }
+
+/* app icon */
+.icon {
+  flex: none; width: 72px; height: 72px; border-radius: 22.5%; overflow: hidden; position: relative;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 10px 28px rgba(0,0,0,.45);
+  transition: transform .25s ease-out; transform-style: preserve-3d;
+}
+.icon img, .icon svg { width: 100%; height: 100%; object-fit: cover; }
+.icon::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.35), transparent 42%);
+  mix-blend-mode: soft-light; pointer-events: none;
+}
+
+/* Nordlysets Spor — video */
+.c-nordlys { --accent: #6ff0c0; }
+.c-nordlys video, .c-nordlys .poster {
+  position: absolute; inset: -6% 0; width: 100%; height: 112%; object-fit: cover; z-index: 0;
+}
+.c-nordlys::before {
+  content: ""; position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(180deg, rgba(5, 13, 19, .05) 10%, rgba(5, 13, 19, .5) 58%, rgba(5, 13, 19, .92) 100%), linear-gradient(90deg, rgba(5, 13, 19, .55), transparent 65%);
+}
+.c-nordlys .info { padding: 40px 36px 38px; }
+.c-nordlys .head h3 { font-size: 2.2rem; }
+.c-nordlys .icon { width: 84px; height: 84px; }
+
+/* Ammehjerne — phones */
+.c-amme { --accent: #f0a3bf; }
+.media-amme {
+  position: relative; height: 380px; overflow: hidden;
+  background: radial-gradient(70% 90% at 50% 10%, #f3ddd3, #d9a9b1 70%, #b0476d);
+}
+.phone {
+  position: absolute; bottom: -40px; left: 50%; width: 210px; aspect-ratio: 800 / 1738;
+  border-radius: 34px; overflow: hidden; background: #111; border: 5px solid #16181c;
+  box-shadow: 0 30px 60px rgba(60, 10, 30, .45);
+}
+.phone img { width: 100%; height: 100%; object-fit: cover; }
+.phone.p1 { margin-left: -105px; top: 38px; z-index: 2; }
+.phone.p2 { margin-left: -280px; top: 92px; z-index: 1; transform: rotate(-6deg); }
+.phone.p3 { margin-left: 70px; top: 92px; z-index: 1; transform: rotate(6deg); }
+.phone.p2, .phone.p3 { width: 190px; }
+
+/* Block Amok — slideshow */
+.c-block { --accent: #7fd66b; }
+.media-block { position: relative; height: 380px; overflow: hidden; background: #2a7fd0; }
+.slides { position: absolute; inset: -4% 0; }
+.slides img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.1s ease, transform 6s ease-out; }
+.slides img.on { opacity: 1; transform: scale(1); }
+
+
+/* Ammehjerne — wide, phones left, text right */
+.c-wide.c-amme { flex-direction: row; min-height: 480px; justify-content: flex-start; }
+.c-wide.c-amme .media-amme { flex: 0 0 56%; height: auto; min-height: 480px; }
+.c-wide.c-amme .phone { width: 230px; bottom: -60px; }
+.c-wide.c-amme .phone.p1 { margin-left: -115px; top: 50px; }
+.c-wide.c-amme .phone.p2 { margin-left: -300px; top: 110px; width: 205px; }
+.c-wide.c-amme .phone.p3 { margin-left: 95px; top: 110px; width: 205px; }
+.c-wide.c-amme .info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 44px; }
+.c-wide.c-amme .head h3 { font-size: 2.2rem; }
+.c-wide.c-amme .icon { width: 84px; height: 84px; }
+
+.c-wide .info > .btn { align-self: flex-start; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Disco Flip — trailer */
+.c-disco { --accent: #ffd84a; }
+.media-disco { position: relative; display: block; height: 380px; overflow: hidden; background: #000; }
+.media-disco img { width: 100%; height: 100%; object-fit: contain; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+.media-disco:hover img { transform: scale(1.04); }
+.media-disco .play {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(10, 24, 32, .55); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.4); color: #fff; transition: transform .25s, background .25s;
+}
+.media-disco:hover .play { transform: scale(1.1); background: rgba(10, 24, 32, .75); }
+.media-disco .play svg { width: 28px; height: 28px; margin-left: 3px; }
+
+/* Disco Flip — wide, trailer left */
+.c-wide.c-disco { flex-direction: row; min-height: 400px; justify-content: flex-start; }
+.c-wide.c-disco .media-disco { flex: 0 0 56%; height: auto; min-height: 400px; }
+.c-wide.c-disco .info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 44px; }
+.c-wide.c-disco .head h3 { font-size: 2rem; }
+.c-wide.c-disco .icon { width: 84px; height: 84px; }
+.c-jawsome { --accent: #ffd12e; }
+.c-jawsome .slides img { object-position: 100% 50%; }
+.c-jawsome .slides { inset: 0; }
+.media-block { height: 340px; }
+
+/* Link tiles */
+.tile { flex-direction: row; align-items: center; gap: 20px; padding: 24px 28px; }
+.tile .icon { width: 64px; height: 64px; }
+.tile h3 { margin: 0; font-size: 1.25rem; letter-spacing: -.01em; }
+.tile p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+.tile .arrow { margin-left: auto; width: 22px; height: 22px; opacity: .6; transition: transform .25s, opacity .25s; }
+.tile:hover .arrow { transform: translate(3px, -3px); opacity: 1; }
+.c-allcaps { --accent: #b16cf0; } .c-linkedin { --accent: #4a9be0; }
+
+/* ───────── About + footer ───────── */
+.about { padding: 70px 0 30px; }
+.about .wrap { max-width: 760px; }
+.about h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -.025em; line-height: 1.2; margin: 0 0 16px; }
+.about p { color: var(--muted); font-size: 1.1rem; margin: 0; }
+footer { margin-top: 70px; border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--muted); font-size: .9rem; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
+footer nav { display: flex; gap: 22px; flex-wrap: wrap; }
+footer a:hover { color: var(--ink); }
+
+/* ───────── Responsive + motion ───────── */
+@media (max-width: 860px) {
+  .c-half, .c-third { grid-column: span 12; }
+  .c-wide { min-height: 560px; }
+  .c-nordlys video, .c-nordlys .poster { object-position: 50% 30%; }
+  .tag { display: table; margin: 8px 0 0; }
+  .c-nordlys .info { padding: 28px 22px 26px; }
+  .c-nordlys .head h3 { font-size: 1.8rem; }
+  .media-amme, .media-block { height: 320px; }
+  .phone { width: 180px; } .phone.p2, .phone.p3 { width: 160px; }
+  .phone.p1 { margin-left: -90px; } .phone.p2 { margin-left: -225px; } .phone.p3 { margin-left: 65px; }
+  .section-head { padding-top: 64px; }
+  .c-wide.c-amme { flex-direction: column; min-height: 0; }
+  .c-wide.c-amme .media-amme { flex: none; height: 330px; min-height: 0; }
+  .c-wide.c-amme .phone { width: 180px; bottom: -40px; } .c-wide.c-amme .phone.p2, .c-wide.c-amme .phone.p3 { width: 160px; }
+  .c-wide.c-amme .phone.p1 { margin-left: -90px; top: 40px; } .c-wide.c-amme .phone.p2 { margin-left: -225px; top: 90px; } .c-wide.c-amme .phone.p3 { margin-left: 65px; top: 90px; }
+  .c-wide.c-amme .info { padding: 26px 22px 28px; }
+  .c-wide.c-amme .head h3 { font-size: 1.8rem; }
+  .c-wide.c-disco { flex-direction: column; min-height: 0; }
+  .c-wide.c-disco .media-disco { flex: none; height: 260px; min-height: 0; }
+  .c-wide.c-disco .info { padding: 26px 22px 28px; }
+  .c-wide.c-disco .head h3 { font-size: 1.8rem; }
+}
+@media (hover: none) { .card::after { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .card { opacity: 1; transform: none; }
+  .slides img { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero" id="top">
+  <div class="layer aurora" data-depth=".1"><i></i><i></i><i></i></div>
+  <div class="layer stars" id="stars" data-depth=".05"></div>
+  <div class="layer glow" data-depth=".2"></div>
+  <div class="layer mtn far" data-depth=".55" data-x="10"><svg id="m1" viewBox="0 0 1440 400" preserveAspectRatio="none"></svg></div>
+  <div class="layer mtn mid" data-depth=".32" data-x="22"><svg id="m2" viewBox="0 0 1440 400" preserveAspectRatio="none"></svg></div>
+  <div class="layer mtn near" data-depth=".12" data-x="40"><svg id="m3" viewBox="0 0 1440 400" preserveAspectRatio="none"></svg></div>
+  <div class="hero-content" data-depth="-.12" data-x="-6">
+    <h1>Hej, jeg hedder <span>Kristoffer</span></h1>
+    <p>Jeg bygger spil og apps. Her er noget af det.</p>
+  </div>
+  <a class="cue" href="#projekter" aria-label="Se projekter">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </a>
+</header>
+
+<main>
+  <div class="wrap" id="projekter">
+    <div class="section-head">
+      <div class="eyebrow">Projekter</div>
+      <h2>Ting jeg har lavet</h2>
+      <p>Apps og spil til telefonen, et spil der kører direkte i browseren, og lidt mere.</p>
+    </div>
+
+    <div class="grid">
+
+
+      <!-- Ammehjerne -->
+      <article class="card c-wide c-amme">
+        <div class="media-amme" data-par=".06">
+          <div class="phone p2"><img src="img/babybrain-3.jpg" alt="Historik i Ammehjerne" loading="lazy"></div>
+          <div class="phone p3"><img src="img/babybrain-4.jpg" alt="Overblik i Ammehjerne" loading="lazy"></div>
+          <div class="phone p1"><img src="img/babybrain-1.jpg" alt="Amning i gang i Ammehjerne" loading="lazy"></div>
+        </div>
+        <div class="info">
+          <div class="head">
+            <div class="icon"><img src="img/babybrain-icon.jpg" alt="" width="72" height="72"></div>
+            <div><h3>Ammehjerne</h3><small>iPhone · amme- og søvnlog</small></div>
+          </div>
+          <p>Klokken er tre om natten. Hvilken side var det? Start en amning med ét tryk — også fra låseskærmen, Kontrolcenter eller Siri.</p>
+          <a class="btn" href="https://apps.apple.com/dk/app/baby-brain-feed-sleep/id6816306256" target="_blank" rel="noopener">Hent i App Store
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        </div>
+      </article>
+
+      <!-- Nordlysets Spor -->
+      <article class="card c-wide c-nordlys">
+        <img class="poster" src="img/nordlys-poster.jpg" alt="" aria-hidden="true">
+        <video muted loop playsinline preload="metadata" poster="img/nordlys-poster.jpg" aria-hidden="true">
+          <source src="video/nordlysets-spor.mp4" type="video/mp4">
+        </video>
+        <div class="info">
+          <div class="head">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 100 100"><defs>
+                <linearGradient id="nb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050d1c"/><stop offset="1" stop-color="#15304a"/></linearGradient>
+                <linearGradient id="na" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6ff0c0"/><stop offset="1" stop-color="#a684ff"/></linearGradient>
+                <filter id="nblur"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
+                <rect width="100" height="100" fill="url(#nb)"/>
+                <path d="M-5 38 C 20 10, 40 50, 62 24 S 95 14, 108 30" fill="none" stroke="url(#na)" stroke-width="15" stroke-linecap="round" opacity=".85" filter="url(#nblur)"/>
+                <path d="M-5 54 C 25 30, 45 62, 70 40 S 98 34, 108 46" fill="none" stroke="url(#na)" stroke-width="6" stroke-linecap="round" opacity=".7" filter="url(#nblur)"/>
+                <path d="M0 76 C 25 66, 55 72, 100 64 V100 H0Z" fill="#e7f1fa"/>
+                <g fill="#9bb6cf"><ellipse cx="30" cy="86" rx="2.6" ry="1.8"/><ellipse cx="41" cy="82" rx="2.6" ry="1.8"/><ellipse cx="52" cy="86" rx="2.6" ry="1.8"/><ellipse cx="63" cy="82" rx="2.6" ry="1.8"/></g>
+              </svg>
+            </div>
+            <div><h3>Nordlysets Spor<span class="tag">Spil i browseren</span></h3><small>Grønland 1921 · overlevelseseventyr</small></div>
+          </div>
+          <p>Saml drivtømmer, byg iglo og hold varmen gennem snestorme og lange nætter under nordlyset — sammen med din slædehund Siku. Gratis, og det kører direkte her.</p>
+          <a class="btn" href="nordlysets-spor/">Spil nu
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </article>
+
+      <!-- Block Amok -->
+      <article class="card c-half c-block">
+        <div class="media-block">
+          <div class="slides" data-par=".08">
+            <img class="on" src="img/blockamok-1.jpg" alt="Block Amok: skyd strukturerne ned" loading="lazy">
+            <img src="img/blockamok-2.jpg" alt="" loading="lazy">
+            <img src="img/blockamok-3.jpg" alt="" loading="lazy">
+          </div>
+        </div>
+        <div class="info">
+          <div class="head">
+            <div class="icon"><img src="img/blockamok-icon.jpg" alt="" width="72" height="72"></div>
+            <div><h3>Block Amok</h3><small>iPhone, iPad &amp; Android · actionpuslespil</small></div>
+          </div>
+          <p>Skyd bygninger og papkøer, til de falder sammen. Kør et sjovt køretøj og brug fåre-kræfter — din får-makker hepper på dig.</p>
+          <div class="btns">
+            <a class="btn" href="https://apps.apple.com/dk/app/block-amok/id1456256040" target="_blank" rel="noopener">App Store <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+            <a class="btn ghost" href="https://play.google.com/store/apps/details?id=com.ALLCAPS.Block_Amok" target="_blank" rel="noopener">Google Play <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- Jawsome -->
+      <article class="card c-half c-jawsome">
+        <div class="media-block">
+          <div class="slides" data-par=".08">
+            <img class="on" src="img/jawsome-1.webp" alt="Jawsome: slå hajerne, så de eksploderer" loading="lazy">
+            <img src="img/jawsome-2.webp" alt="" loading="lazy">
+            <img src="img/jawsome-3.webp" alt="" loading="lazy">
+          </div>
+        </div>
+        <div class="info">
+          <div class="head">
+            <div class="icon"><img src="img/jawsome-icon.webp" alt="" width="72" height="72" loading="lazy"></div>
+            <div><h3>Jawsome</h3><small>Android · actionspil</small></div>
+          </div>
+          <p>Synes du, det er awesome at slå en haj så hårdt, at den eksploderer? Nej — det er JAWSOME!</p>
+          <a class="btn" href="https://play.google.com/store/apps/details?id=com.Allcaps.Jawsome" target="_blank" rel="noopener">Google Play <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        </div>
+      </article>
+
+      <!-- Disco Flip -->
+      <article class="card c-wide c-disco">
+        <a class="media-disco" href="https://www.youtube.com/watch?v=Ej1cF6EcE3k" target="_blank" rel="noopener" aria-label="Se trailer for Disco Flip på YouTube">
+          <img src="img/discoflip-thumb.webp" alt="Disco Flip: farverige baner i klodsgrafik" loading="lazy">
+          <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg></span>
+        </a>
+        <div class="info">
+          <div class="head">
+            <div class="icon"><img src="img/discoflip-icon.webp" alt="" width="72" height="72" loading="lazy"></div>
+            <div><h3>Disco Flip<span class="tag">Trailer</span></h3><small>Mobilspil · klodsgrafik</small></div>
+          </div>
+          <p>Farverige baner, fælder og små rum i klodsgrafik.</p>
+          <a class="btn" href="https://www.youtube.com/watch?v=Ej1cF6EcE3k" target="_blank" rel="noopener">Se trailer
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg></a>
+        </div>
+      </article>
+
+      <!-- Links -->
+      <a class="card c-half tile c-allcaps" href="https://www.allcapsgames.com" target="_blank" rel="noopener">
+        <div class="icon"><img src="img/allcaps.webp" alt="" width="64" height="64" loading="lazy"></div>
+        <div><h3>ALL CAPS Games</h3><p>Spilstudiet bag Block Amok</p></div>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg>
+      </a>
+      <a class="card c-half tile c-linkedin" href="https://www.linkedin.com/in/kristofferbjohansen/" target="_blank" rel="noopener">
+        <div class="icon"><img src="img/linkedin.webp" alt="" width="64" height="64" loading="lazy"></div>
+        <div><h3>LinkedIn</h3><p>Hvem jeg er, og hvad jeg laver</p></div>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg>
+      </a>
+
+    </div>
+  </div>
+
+  <section class="about">
+    <div class="wrap">
+      <div class="eyebrow">Om mig</div>
+      <h2>Jeg bygger spil og apps — fra actionspil til hverdagsværktøj.</h2>
+      <p>Jeg laver spil og apps til telefonen og browseren, og flere af dem kan hentes på App Store og Google Play.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr">2026</span> Kristoffer Johansen</span>
+    <nav>
+      <a href="ammehjerne/">Ammehjerne support</a>
+      <a href="ammehjerne/privacy-policy.html">Privatlivspolitik</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* seeded RNG so the skyline is the same on every visit */
+  const rng = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
+
+  /* mountains: midpoint displacement, closed to the bottom edge */
+  function ridge(id, seed, base, amp, rough, fill) {
+    const r = rng(seed), n = 128, pts = new Array(n + 1).fill(0);
+    pts[0] = r() * .5; pts[n] = r() * .5;
+    (function split(a, b, s) {
+      if (b - a < 2) return;
+      const m = (a + b) >> 1;
+      pts[m] = (pts[a] + pts[b]) / 2 + (r() - .5) * s;
+      split(a, m, s * rough); split(m, b, s * rough);
+    })(0, n, 1);
+    const lo = Math.min(...pts), hi = Math.max(...pts);
+    let d = 'M0 400 ';
+    pts.forEach((p, i) => { d += `L${(i / n * 1440).toFixed(1)} ${(base - ((p - lo) / (hi - lo)) * amp).toFixed(1)} `; });
+    d += 'L1440 400Z';
+    const svg = document.getElementById(id);
+    svg.innerHTML = `<path d="${d}" fill="${fill}"/>`;
+  }
+  ridge('m1', 11, 330, 300, .58, '#2b5068');
+  ridge('m2', 23, 340, 250, .56, '#173240');
+  ridge('m3', 37, 360, 190, .52, '#0a1820');
+
+  /* stars */
+  const stars = document.getElementById('stars'), sr = rng(7);
+  for (let i = 0; i < 110; i++) {
+    const s = document.createElement('i');
+    s.style.cssText = `left:${sr() * 100}%;top:${sr() * 62}%;animation-delay:${-sr() * 4}s;animation-duration:${3 + sr() * 4}s;` +
+      (sr() > .85 ? 'width:3px;height:3px;' : '');
+    stars.appendChild(s);
+  }
+
+  /* parallax: scroll + pointer */
+  const layers = [...document.querySelectorAll('[data-depth]')];
+  const pars = [...document.querySelectorAll('[data-par]')];
+  let mx = 0, my = 0, tx = 0, ty = 0, ticking = false;
+  function frame() {
+    ticking = false;
+    mx += (tx - mx) * .08; my += (ty - my) * .08;
+    const y = scrollY, vh = innerHeight;
+    if (y < vh * 1.3) {
+      for (const el of layers) {
+        const d = parseFloat(el.dataset.depth), x = parseFloat(el.dataset.x || 0);
+        el.style.transform = `translate3d(${(mx * x).toFixed(2)}px, ${(y * d + my * x * .5).toFixed(2)}px, 0)`;
+      }
+    }
+    for (const el of pars) {
+      const r = el.parentElement.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > vh) continue;
+      const k = (r.top + r.height / 2 - vh / 2) * parseFloat(el.dataset.par);
+      el.style.transform = `translate3d(0, ${(-k).toFixed(2)}px, 0)`;
+    }
+    if (Math.abs(tx - mx) > .05 || Math.abs(ty - my) > .05) request();
+  }
+  function request() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
+  if (!reduce) {
+    addEventListener('scroll', request, { passive: true });
+    addEventListener('resize', request);
+    addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      tx = (e.clientX / innerWidth - .5) * 2; ty = (e.clientY / innerHeight - .5) * 2; request();
+    }, { passive: true });
+    request();
+  }
+
+  /* reveal on scroll */
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .12 });
+  document.querySelectorAll('.card').forEach((c, i) => { c.style.transitionDelay = (i % 2) * 90 + 'ms'; io.observe(c); });
+
+  /* video only plays while visible (saves battery, respects reduced motion) */
+  const vid = document.querySelector('.c-nordlys video');
+  if (vid && !reduce) {
+    document.querySelector('.c-nordlys .poster').style.display = 'none';
+    new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? vid.play().catch(() => {}) : vid.pause()), { threshold: .25 }).observe(vid);
+  } else if (vid) { vid.remove(); }
+
+  /* screenshot slideshows (one per card) */
+  if (!reduce) document.querySelectorAll('.media-block').forEach((box, n) => {
+    const slides = [...box.querySelectorAll('.slides img')];
+    if (slides.length < 2) return;
+    let i = 0, timer;
+    const tick = () => { slides[i].classList.remove('on'); i = (i + 1) % slides.length; slides[i].classList.add('on'); };
+    new IntersectionObserver(es => es.forEach(e => {
+      clearInterval(timer); if (e.isIntersecting) timer = setInterval(tick, 3400 + n * 350);
+    }), { threshold: .3 }).observe(box);
+  });
+
+  /* pointer glow + icon tilt (mouse only) */
+  if (matchMedia('(hover: hover)').matches && !reduce) {
+    document.querySelectorAll('.card').forEach(c => c.addEventListener('pointermove', e => {
+      const r = c.getBoundingClientRect();
+      c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      const ic = c.querySelector('.icon');
+      if (ic) {
+        const ir = ic.getBoundingClientRect();
+        const dx = (e.clientX - (ir.left + ir.width / 2)) / 160, dy = (e.clientY - (ir.top + ir.height / 2)) / 160;
+        ic.style.transform = `perspective(400px) rotateY(${Math.max(-1, Math.min(1, dx)) * 14}deg) rotateX(${Math.max(-1, Math.min(1, -dy)) * 14}deg) scale(1.06)`;
+      }
+    }));
+    document.querySelectorAll('.card').forEach(c => c.addEventListener('pointerleave', () => {
+      const ic = c.querySelector('.icon'); if (ic) ic.style.transform = '';
+    }));
+  }
+})();
 </script>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NYWBRJK60P"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', 'G-NYWBRJK60P');
-    </script>
-
-    
-
 </body>
-
-
-
-
+</html>
