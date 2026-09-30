@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import * as W from './world.js';
-import { createIceMaterial, Snow, Particles, Footprints, PostFX } from './fx.js';
+import { createIceMaterial, Snow, Particles, Footprints, PostFX, Mist } from './fx.js';
+import { lightUniforms, flameUniforms } from './shaders.js';
+import { makePlayerRig, PlayerAnimator } from './player.js';
+import { buildScatter, windUniform } from './scatter.js';
 import { Sound } from './audio.js';
 import { Dog } from './dog.js';
 
@@ -34,7 +37,9 @@ sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left: -32, right: 32, top: 32, bottom: -32, near: 1, far: 140 });
 sun.shadow.bias = -0.0006;
 sun.shadow.normalBias = 0.04;
-scene.add(hemi, sun, sun.target);
+// Køligt modlys, der skiller figurer fra sneen
+const rim = new THREE.DirectionalLight(0x9fc4ff, 0.3);
+scene.add(hemi, sun, sun.target, rim, rim.target);
 const pointLights = [0, 1].map(() => {
     const l = new THREE.PointLight(0xff8a3a, 0, 16, 2);
     scene.add(l);
@@ -51,11 +56,16 @@ const ice = new THREE.Mesh(new THREE.PlaneGeometry(900, 900).rotateX(-Math.PI / 
 scene.add(ice);
 const world = W.populate(scene);
 const { nodes, colliders, cairns, holes, bergs } = world;
+buildScatter(scene, nodes, isTouch);
 
 const snow = new Snow(isTouch ? 2200 : 4500);
+const bokeh = new Snow(isTouch ? 40 : 70, { box: [46, 18, 46], soft: true });
+bokeh.uniforms.uSize.value = 0.42;
+const mist = new Mist(isTouch ? 16 : 24);
+scene.add(bokeh.points, mist.group);
 const sparks = new Particles(280, true);
 const puffs = new Particles(320, false);
-const steps = new Footprints(260);
+const steps = new Footprints(420);
 scene.add(snow.points, sparks.points, puffs.points, steps.mesh);
 
 // ---------------------------------------------------------------------------
@@ -116,7 +126,8 @@ const NODE_INFO = {
 // ---------------------------------------------------------------------------
 // Figurer
 // ---------------------------------------------------------------------------
-const player = W.makePlayer();
+const player = makePlayerRig();
+const anim = new PlayerAnimator(player);
 scene.add(player.group);
 const pBlob = W.makeBlob(1.3, 0.35);
 scene.add(pBlob);
@@ -135,7 +146,7 @@ const P = {
 P.pos.set(W.SPAWN.x, Math.max(0, W.groundHeight(W.SPAWN.x, W.SPAWN.z)), W.SPAWN.z);
 
 const sled = W.makeSled();
-sled.position.set(0, 0, 0.55);
+sled.position.set(0, 0, 0.95);
 sled.visible = false;
 player.group.add(sled);
 
@@ -156,7 +167,7 @@ for (let i = 0; i < 8; i++) {
     const m = W.makeHare();
     scene.add(m.group);
     hares.push({
-        m: m.group, pos: new THREE.Vector3(s.x, s.h, s.z), home: new THREE.Vector3(s.x, 0, s.z),
+        m: m.group, inner: m.inner, ears: m.ears, alertK: 0, pos: new THREE.Vector3(s.x, s.h, s.z), home: new THREE.Vector3(s.x, 0, s.z),
         target: new THREE.Vector3(s.x, 0, s.z), alive: true, respawn: 0, hop: 0, yaw: 0, wait: 0, scare: 0, scareFrom: null,
     });
 }
@@ -175,12 +186,117 @@ for (let i = 0; i < 2; i++) {
     const s = world.spot((h) => h > -2.4, 0, 0, 0, 100, 1, false);
     if (!s || Math.hypot(s.x - W.SPAWN.x, s.z - W.SPAWN.z) < 55) { i--; continue; }
     const m = W.makeBear();
-    const blob = W.makeBlob(2.4, 0.3);
+    // Omdrejningspunkt ved hofterne, så bjørnen kan rejse sig på bagbenene
+    const pivot = new THREE.Group();
+    pivot.position.set(0, 0.7, -0.55);
+    while (m.group.children.length) {
+        const c = m.group.children[0];
+        c.position.y -= 0.7;
+        c.position.z += 0.55;
+        pivot.add(c);
+    }
+    m.group.add(pivot);
+    const blob = W.makeBlob(2.6, 0.32);
     scene.add(m.group, blob);
     bears.push({
-        ...m, blob, pos: new THREE.Vector3(s.x, 0, s.z), home: new THREE.Vector3(s.x, 0, s.z),
+        ...m, pivot, blob, standT: 0, walk: 0, pos: new THREE.Vector3(s.x, 0, s.z), home: new THREE.Vector3(s.x, 0, s.z),
         target: new THREE.Vector3(s.x, 0, s.z), flee: 0, atk: 0, wait: 0, yaw: 0, phase: 0, mode: 'wander', alertT: 0,
     });
+}
+
+// Ringe i vandet ved åndehullerne
+const ripples = [];
+const rippleGeo = new THREE.RingGeometry(0.5, 0.56, 28).rotateX(-Math.PI / 2);
+for (let i = 0; i < 10; i++) {
+    const m = new THREE.Mesh(rippleGeo, new THREE.MeshBasicMaterial({ color: '#cfe9ff', transparent: true, opacity: 0, depthWrite: false }));
+    m.visible = false;
+    m.renderOrder = 4;
+    scene.add(m);
+    ripples.push({ m, t: 1 });
+}
+let rippleIdx = 0;
+function ripple(x, z, delay = 0) {
+    const r = ripples[rippleIdx++ % ripples.length];
+    r.t = -delay;
+    r.m.position.set(x, 0.03, z);
+}
+function updateRipples(dt) {
+    for (const r of ripples) {
+        if (r.t >= 1) { r.m.visible = false; continue; }
+        r.t += dt / 1.4;
+        if (r.t < 0) continue;
+        r.m.visible = true;
+        r.m.scale.setScalar(0.6 + r.t * 1.6);
+        r.m.material.opacity = (1 - r.t) * 0.55;
+    }
+}
+
+// Markering under det, du kan interagere med
+const hl = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    const gr = g.createRadialGradient(64, 64, 30, 64, 64, 62);
+    gr.addColorStop(0, 'rgba(255,255,255,0)');
+    gr.addColorStop(0.55, 'rgba(255,255,255,0.15)');
+    gr.addColorStop(0.8, 'rgba(255,255,255,1)');
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 4; i++) {
+        g.save();
+        g.translate(64, 64);
+        g.rotate(i * Math.PI / 2);
+        g.fillStyle = 'rgba(255,255,255,0.9)';
+        g.beginPath();
+        g.moveTo(0, -63);
+        g.lineTo(-5, -52);
+        g.lineTo(5, -52);
+        g.fill();
+        g.restore();
+    }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(cv), color: '#ffbf3a', transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+    }));
+    m.renderOrder = 4;
+    return { m, get: null, r: 1, op: 0, pos: new THREE.Vector3() };
+})();
+scene.add(hl.m);
+const tmpH = new THREE.Vector3();
+
+function highlightFor(it) {
+    const at = (x, y, z) => () => tmpH.set(x, y, z);
+    switch (it.kind) {
+        case 'node': return [at(it.n.x, it.n.y, it.n.z), it.n.r + 0.5];
+        case 'cook': case 'fuel': case 'relight': case 'refill': return [at(it.h.x, it.h.y, it.h.z), 1];
+        case 'cairn': return [at(it.c.x, W.groundHeight(it.c.x, it.c.z), it.c.z), 1.1];
+        case 'seal': return [at(it.s.hole.x, 0, it.s.hole.z), 1];
+        case 'hare': return [() => tmpH.copy(it.h.pos), 0.6];
+        case 'bear': return [() => tmpH.copy(it.b.pos), 1.5];
+        case 'pet': case 'feed': return [() => tmpH.copy(siku.pos), 0.75];
+        case 'snow': return [() => tmpH.set(P.pos.x + Math.sin(P.yaw) * 0.9, P.pos.y, P.pos.z + Math.cos(P.yaw) * 0.9), 0.55];
+    }
+    return null;
+}
+
+function updateHighlight(dt) {
+    const want = hl.get && !S.paused && S.started && !S.over ? 1 : 0;
+    hl.op += (want - hl.op) * Math.min(1, dt * 8);
+    if (hl.get) {
+        hl.get();
+        // Læg ringen oven på det højeste punkt under den, så den ikke forsvinder i skråninger
+        const rr = hl.r * 0.9;
+        tmpH.y = Math.max(0, W.groundHeight(tmpH.x, tmpH.z), W.groundHeight(tmpH.x + rr, tmpH.z), W.groundHeight(tmpH.x - rr, tmpH.z),
+            W.groundHeight(tmpH.x, tmpH.z + rr), W.groundHeight(tmpH.x, tmpH.z - rr));
+        if (hl.op < 0.05) hl.pos.copy(tmpH);
+        hl.pos.lerp(tmpH, 1 - Math.exp(-14 * dt));
+    }
+    const pulse = 1 + Math.sin(S.time * 5) * 0.06;
+    hl.m.position.set(hl.pos.x, hl.pos.y + 0.06, hl.pos.z);
+    hl.m.scale.setScalar(hl.r * 2.2 * pulse * (0.8 + hl.op * 0.2));
+    hl.m.rotation.y = S.time * 0.6;
+    hl.m.material.opacity = hl.op * (0.8 + Math.sin(S.time * 5) * 0.15);
+    hl.m.visible = hl.op > 0.01;
 }
 
 const heaters = []; // bål + lamper
@@ -239,22 +355,24 @@ function updateToast(dt) {
     toastT -= dt;
     if (toastT <= 0 && toastQ.length) {
         toastEl.textContent = toastQ.shift();
-        toastEl.style.opacity = 1;
+        toastEl.classList.remove('show');
+        void toastEl.offsetWidth;
+        toastEl.classList.add('show');
         toastT = 2.8;
     } else if (toastT <= 0) {
-        toastEl.style.opacity = 0;
+        toastEl.classList.remove('show');
     }
 }
 
 const floaters = [];
 const vProj = new THREE.Vector3();
-function floatText(text, pos, color = '#fff', emote = false) {
+function floatText(text, pos, color = '#fff', emote = false, fly = null) {
     const el = document.createElement('div');
     el.className = emote ? 'ft emote' : 'ft';
     el.textContent = text;
     el.style.color = color;
     $('floaters').appendChild(el);
-    floaters.push({ el, pos: new THREE.Vector3(pos.x, pos.y + (emote ? 1.3 : 2), pos.z), t: 0, life: emote ? 1.6 : 1.4 });
+    floaters.push({ el, pos: new THREE.Vector3(pos.x, pos.y + (emote ? 1.3 : 2), pos.z), t: 0, life: emote ? 1.6 : 1.4, fly });
 }
 function toScreen(p, out) {
     vProj.copy(p).project(camera);
@@ -267,10 +385,36 @@ function updateFloaters(dt) {
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
         f.t += dt;
-        f.pos.y += dt * 0.9;
+        // Indsamlede ting flyver op i tasken
+        if (f.fly && f.t > 0.5) {
+            if (!f.from) {
+                toScreen(f.pos, scr);
+                f.from = { x: scr.x, y: scr.y };
+                const chip = document.querySelector(`.chip[data-k="${f.fly}"]`) || $('inv-strip');
+                const r = chip.getBoundingClientRect();
+                f.to = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+                f.chip = chip;
+            }
+            const k = Math.min(1, (f.t - 0.5) / 0.55), e = k * k * (3 - 2 * k);
+            const x = f.from.x + (f.to.x - f.from.x) * e, y = f.from.y + (f.to.y - f.from.y) * e - Math.sin(e * Math.PI) * 60;
+            f.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${1 - e * 0.45})`;
+            f.el.style.opacity = String(1 - Math.max(0, k - 0.85) / 0.15);
+            if (k >= 1) {
+                if (f.chip.classList.contains('chip')) {
+                    f.chip.classList.remove('bump');
+                    void f.chip.offsetWidth;
+                    f.chip.classList.add('bump');
+                }
+                f.el.remove();
+                floaters.splice(i, 1);
+            }
+            continue;
+        }
+        f.pos.y += dt * (f.fly ? 1.8 * Math.max(0, 1 - f.t * 2) : 0.9);
         toScreen(f.pos, scr);
-        f.el.style.transform = `translate(${scr.x}px, ${scr.y}px) translate(-50%, -50%)`;
-        f.el.style.opacity = String(1 - Math.max(0, f.t - f.life * 0.5) / (f.life * 0.5));
+        const pop = f.t < 0.15 ? 0.6 + f.t / 0.15 * 0.6 : Math.max(1, 1.2 - (f.t - 0.15) * 1.5);
+        f.el.style.transform = `translate(${scr.x}px, ${scr.y}px) translate(-50%, -50%) scale(${pop})`;
+        f.el.style.opacity = f.fly ? '1' : String(1 - Math.max(0, f.t - f.life * 0.5) / (f.life * 0.5));
         if (f.t > f.life) {
             f.el.remove();
             floaters.splice(i, 1);
@@ -280,7 +424,7 @@ function updateFloaters(dt) {
 
 function gain(key, n, pos) {
     S.inv[key] += n;
-    floatText(`+${n} ${ITEMS[key].icon}`, pos || P.pos, '#ffe9a8');
+    floatText(`+${n} ${ITEMS[key].icon}`, pos || P.pos, '#ffe9a8', false, key);
 }
 
 // ---------------------------------------------------------------------------
@@ -292,6 +436,24 @@ const G = {
     toast,
     nodeName: (type) => NODE_INFO[type].name,
     killHare: (h) => killHare(h),
+    fx: {
+        snow: (pos, spread, n, up) => {
+            for (let i = 0; i < n; i++) {
+                puffs.emit(pos.x + (Math.random() - 0.5) * spread, pos.y + 0.45, pos.z + (Math.random() - 0.5) * spread,
+                    (Math.random() - 0.5) * up, Math.random() * up * 0.5, (Math.random() - 0.5) * up,
+                    COL.snow, 0.07 + Math.random() * 0.05, 0.5, { grav: -6, alpha: 0.85 });
+            }
+        },
+        kick: (x, y, z, vx, vz) => {
+            puffs.emit(x, y, z, vx + (Math.random() - 0.5), 1.5 + Math.random() * 1.5, vz + (Math.random() - 0.5),
+                COL.snow, 0.09, 0.55, { grav: -8, alpha: 0.9 });
+        },
+        print: (x, y, z, yaw, size) => steps.add(x, y, z, yaw, size),
+        breath: (x, y, z, yaw, size) => {
+            puffs.emit(x, y, z, Math.sin(yaw) * 0.4 + S.wind.x * 0.08, 0.15, Math.cos(yaw) * 0.4 + S.wind.z * 0.08,
+                COL.breath, size, 1, { alpha: 0.22 * (0.5 + S.night * 0.7), grow: 2.2, drag: 1.2 });
+        },
+    },
     dogGift: () => {
         gain('meat', 1, siku.pos);
         gain('hide', 1, siku.pos);
@@ -407,13 +569,13 @@ bindButton('btn-eat', () => eatBest());
 bindButton('btn-zoom', () => { zoomIdx = (zoomIdx + 1) % ZOOMS.length; resize(); });
 bindButton('btn-fx', () => {
     post.enabled = !post.enabled;
-    $('btn-fx').style.opacity = post.enabled ? 1 : 0.5;
+    $('btn-fx').classList.toggle('off', !post.enabled);
     toast(post.enabled ? '🎞️ Retro-filter til' : '🎞️ Retro-filter fra');
     resize();
 });
 bindButton('btn-sound', () => {
     sound.setMuted(!sound.muted);
-    $('btn-sound').textContent = sound.muted ? '🔇' : '🔊';
+    $('btn-sound').classList.toggle('muted', sound.muted);
 });
 document.querySelectorAll('.panel .close').forEach((b) => b.addEventListener('click', closePanels));
 
@@ -425,6 +587,7 @@ function anyPanelOpen() {
 }
 function closePanels() {
     ['panel-craft', 'panel-inv'].forEach((id) => $(id).classList.add('hidden'));
+    if (!anyPanelOpen()) $('backdrop').classList.add('hidden');
     if (!anyPanelOpen() && !S.over) S.paused = false;
 }
 function togglePanel(id) {
@@ -434,6 +597,7 @@ function togglePanel(id) {
     closePanels();
     if (open) {
         el.classList.remove('hidden');
+        $('backdrop').classList.remove('hidden');
         S.paused = true;
         actionHeld = false;
         if (id === 'panel-craft') renderCraft();
@@ -450,7 +614,7 @@ function renderCraft() {
     for (const r of RECIPES) {
         const done = r.once && S.has[r.id];
         const row = document.createElement('div');
-        row.className = 'recipe' + (done ? ' done' : '');
+        row.className = 'recipe' + (done ? ' done' : canAfford(r) ? ' ready' : '');
         const cost = Object.entries(r.cost).map(([k, v]) =>
             `<span class="${S.inv[k] >= v ? '' : 'miss'}">${ITEMS[k].icon} ${S.inv[k]}/${v}</span>`).join(' · ');
         row.innerHTML = `<div class="ic">${r.icon}</div><div class="txt"><div class="nm">${r.name}</div>` +
@@ -509,6 +673,7 @@ function eat(k) {
     S.food = Math.min(100, S.food + it.food);
     if (it.warm) S.warmth = Math.min(100, S.warmth + it.warm);
     sound.eat();
+    anim.play('eat');
     floatText(`${it.icon} +${it.food}`, P.pos, '#c6e38a');
 }
 function eatBest() {
@@ -531,6 +696,7 @@ function placeHeater(kind, x, z) {
     const y = Math.max(0, W.groundHeight(x, z));
     obj.group.position.set(x, y, z);
     scene.add(obj.group);
+    popIn(obj.group);
     const collider = { x, z, r: kind === 'fire' ? 0.55 : 0.35, active: true };
     colliders.push(collider);
     heaters.push({ kind, x, z, y, obj, lit: true, fuel: kind === 'fire' ? 150 : 420, collider });
@@ -540,6 +706,7 @@ function craft(r) {
     if (!canAfford(r) || (r.once && S.has[r.id])) return;
     for (const [k, v] of Object.entries(r.cost)) S.inv[k] -= v;
     sound.craft();
+    anim.play('craft');
     if (r.id === 'fire') {
         const s = frontSpot(1.7);
         placeHeater('fire', s.x, s.z);
@@ -555,7 +722,10 @@ function craft(r) {
         const y = Math.max(0, W.groundHeight(s.x, s.z)) - 0.05;
         obj.group.position.set(s.x, y, s.z);
         obj.group.rotation.y = P.yaw + Math.PI;
+        W.contactShadow(obj.group, 5.6, 5.6, 0.35);
         scene.add(obj.group);
+        popIn(obj.group, 0.8);
+        burst(new THREE.Vector3(s.x, y, s.z), COL.snow, 30, 5, 3);
         igloos.push({ x: s.x, z: s.z, obj });
         S.igloos++;
         toast('⛺ Igloen står klar. Gå ind i den for at søge ly.');
@@ -583,7 +753,7 @@ function applyGear() {
     }
     if (S.has.sled && !sled.visible) {
         sled.visible = true;
-        player.model.position.y = 0.2;
+        popIn(sled);
         for (const fur of ['#3d3a38', '#c9c3b8']) {
             const d = new Dog(scene, P.pos.x + 2, P.pos.z + 2, fur, 'hund');
             d.setState('harness');
@@ -647,10 +817,11 @@ function throwSpear(target, onHit) {
     g.position.copy(from);
     g.lookAt(to);
     scene.add(g);
-    projectiles.push({ g, from, to, t: 0, onHit });
+    g.visible = false;
+    projectiles.push({ g, from, to, t: -0.8, onHit });
     P.yaw = Math.atan2(to.x - from.x, to.z - from.z);
-    P.act = 0.35;
-    sound.whoosh();
+    anim.play('throw');
+    setTimeout(() => sound.whoosh(), 200);
 }
 
 function killHare(h) {
@@ -663,12 +834,17 @@ function killHare(h) {
 function doAction(it) {
     if (it.disabled) return;
     actionCD = 0.4;
-    P.act = 0.3;
+    const ANIM = { cook: 'tend', fuel: 'tend', relight: 'tend', refill: 'tend', cairn: 'read', snow: 'cut', pet: 'pet', feed: 'pet' };
+    if (ANIM[it.kind]) anim.play(ANIM[it.kind]);
+    if (it.kind === 'pet' || it.kind === 'feed') P.yaw = Math.atan2(siku.pos.x - P.pos.x, siku.pos.z - P.pos.z);
     switch (it.kind) {
         case 'node': {
             const n = it.n;
             P.yaw = Math.atan2(n.x - P.pos.x, n.z - P.pos.z);
             n.charges--;
+            n.shake = 0.35;
+            anim.play(n.type === 'stone' ? 'chop' : 'gather');
+            actionCD = n.type === 'stone' ? 0.6 : 0.7;
             const pos = new THREE.Vector3(n.x, n.y, n.z);
             if (n.type === 'wood') { gain('wood', 2, pos); burst(pos, COL.wood, 6); }
             if (n.type === 'stone') { gain('stone', 1, pos); burst(pos, COL.stone, 8); }
@@ -676,7 +852,7 @@ function doAction(it) {
             if (n.type === 'berries') { gain('berries', 2, pos); burst(pos, COL.berry, 5); }
             sound.chop();
             if (n.charges <= 0) {
-                n.group.visible = false;
+                n.dying = true;
                 if (n.collider) n.collider.active = false;
                 n.respawn = 110 + Math.random() * 60;
             }
@@ -830,6 +1006,7 @@ function hurt(dmg, why) {
     S.health = Math.max(0, S.health - dmg);
     S.lastDamage = why;
     sound.hurt();
+    anim.play('hurt');
     const o = $('ov-hurt');
     o.style.opacity = 1;
     setTimeout(() => { o.style.opacity = 0; }, 180);
@@ -875,37 +1052,73 @@ function updatePlayer(dt) {
     if (input > 0.1) P.yaw = angleLerp(P.yaw, Math.atan2(wish.x, wish.z), 1 - Math.exp(-12 * dt));
     player.group.rotation.y = P.yaw;
 
+    // Vend dig mod bålet, når du står stille ved det
+    let fireAmt = 0, fireH = null;
+    for (const h of heaters) {
+        if (!h.lit) continue;
+        const d = dist2(h, P.pos.x, P.pos.z);
+        if (d < 4.2) { fireAmt = Math.max(fireAmt, 1 - Math.max(0, d - 2) / 2.2); fireH = h; }
+    }
+    if (fireH && input < 0.1 && P.idle > 0.6 && !anim.action) {
+        P.yaw = angleLerp(P.yaw, Math.atan2(fireH.x - P.pos.x, fireH.z - P.pos.z), 1 - Math.exp(-3 * dt));
+    }
+    const yawVel = angleLerp(0, P.yaw - (P.lastYaw ?? P.yaw), 1) / Math.max(dt, 1e-4);
+    P.lastYaw = P.yaw;
+    player.group.rotation.y = P.yaw;
+
     // Animation
-    P.act = Math.max(0, P.act - dt);
-    P.phase += dt * P.speed * 2.3;
-    const walk = S.has.sled ? 0 : Math.min(1, P.speed / 3) * (P.onIce && input < 0.1 ? 0.2 : 1);
-    const sw = Math.sin(P.phase) * 0.65 * walk;
-    player.legs[0].rotation.x = sw;
-    player.legs[1].rotation.x = -sw;
-    player.arms[0].rotation.x = -sw * 0.8;
-    player.arms[1].rotation.x = sw * 0.8 - (P.act > 0 ? Math.sin(P.act / 0.3 * Math.PI) * 1.8 : 0);
-    player.model.position.y = (S.has.sled ? 0.2 : 0) + Math.abs(Math.sin(P.phase)) * 0.05 * walk;
-    player.model.rotation.z = P.onIce && P.speed > 1 && input < 0.1 ? Math.sin(S.time * 3) * 0.08 : 0;
-    player.body.rotation.y = Math.sin(P.phase) * 0.1 * walk;
+    const slideTarget = P.onIce && !S.has.sled && P.speed > 1.3 && (input < 0.1 || wish.dot(P.vel) / (input * P.speed) < 0.6) ? 1 : 0;
+    P.slide = (P.slide || 0) + (slideTarget - (P.slide || 0)) * Math.min(1, dt * 6);
+    const wl = S.wind.length() + 1e-6;
+    anim.update(dt, {
+        speed: S.has.sled ? P.speed : P.speed * (1 - P.slide * 0.8),
+        onIce: P.onIce,
+        sled: S.has.sled,
+        idle: P.idle,
+        cold: clamp((40 - S.warmth) / 30, 0, 1),
+        fire: input < 0.1 ? fireAmt : 0,
+        storm: S.sheltered ? 0 : S.storm,
+        windSide: (S.wind.x * Math.cos(P.yaw) - S.wind.z * Math.sin(P.yaw)) / wl,
+        sliding: P.slide,
+        turn: clamp(-yawVel * 0.15, -1, 1),
+        dead: S.over,
+    });
 
     pBlob.position.set(P.pos.x, P.pos.y + 0.03, P.pos.z);
-    pBlob.visible = P.onIce;
+    pBlob.material.opacity = P.onIce ? 0.4 : 0.22;
 
-    // Fodspor / slædespor
-    P.dist += P.speed * dt;
-    if (P.dist > (S.has.sled ? 0.45 : 0.62)) {
-        P.dist = 0;
-        const perpX = Math.cos(P.yaw), perpZ = -Math.sin(P.yaw);
+    // Fodspor i takt med skridtene + sne der sparkes op
+    const perpX = Math.cos(P.yaw), perpZ = -Math.sin(P.yaw);
+    const stepIdx = Math.floor(anim.phase / Math.PI);
+    if (!S.has.sled && stepIdx !== P.lastStep && P.speed > 0.6 && P.slide < 0.5) {
+        P.lastStep = stepIdx;
+        P.side = stepIdx % 2 ? 1 : -1;
+        const fx = P.pos.x + perpX * 0.13 * P.side + Math.sin(P.yaw) * 0.25;
+        const fz = P.pos.z + perpZ * 0.13 * P.side + Math.cos(P.yaw) * 0.25;
         if (!P.onIce) {
-            if (S.has.sled) {
-                for (const s of [-1, 1]) steps.add(P.pos.x + perpX * 0.38 * s, P.pos.y, P.pos.z + perpZ * 0.38 * s, P.yaw, 0.6);
-            } else {
-                P.side *= -1;
-                steps.add(P.pos.x + perpX * 0.14 * P.side, P.pos.y, P.pos.z + perpZ * 0.14 * P.side, P.yaw);
-                sound.step();
+            steps.add(fx, P.pos.y, fz, P.yaw);
+            sound.step();
+            for (let i = 0; i < 3; i++) {
+                puffs.emit(fx, P.pos.y + 0.08, fz, (Math.random() - 0.5) * 0.8 - Math.sin(P.yaw) * 0.6, 0.6 + Math.random() * 0.6,
+                    (Math.random() - 0.5) * 0.8 - Math.cos(P.yaw) * 0.6, COL.snow, 0.09 + Math.random() * 0.06, 0.45, { grav: -5, alpha: 0.8 });
             }
-        } else if (Math.random() < 0.3) {
+        } else if (Math.random() < 0.4) {
             sound.iceStep();
+        }
+    }
+    if (S.has.sled && P.speed > 0.8) {
+        P.dist += P.speed * dt;
+        if (P.dist > 0.45 && !P.onIce) {
+            P.dist = 0;
+            for (const s of [-1, 1]) steps.add(P.pos.x + perpX * 0.38 * s, P.pos.y, P.pos.z + perpZ * 0.38 * s, P.yaw, 0.6);
+        }
+        if (!P.onIce && P.speed > 3) {
+            for (const s of [-1, 1]) {
+                if (Math.random() > dt * 30) continue;
+                puffs.emit(P.pos.x + perpX * 0.4 * s, P.pos.y + 0.1, P.pos.z + perpZ * 0.4 * s,
+                    -P.vel.x * 0.25 + perpX * s * 0.8, 0.8 + Math.random(), -P.vel.z * 0.25 + perpZ * s * 0.8,
+                    COL.snow, 0.14, 0.6, { grav: -4, alpha: 0.7, grow: 1.5 });
+            }
         }
     }
 
@@ -915,7 +1128,7 @@ function updatePlayer(dt) {
         breathT = 1.3 + Math.random() * 0.8;
         const f = 0.35;
         for (let i = 0; i < 3; i++) {
-            puffs.emit(P.pos.x + Math.sin(P.yaw) * f, P.pos.y + 1.52 + (S.has.sled ? 0.2 : 0), P.pos.z + Math.cos(P.yaw) * f,
+            puffs.emit(P.pos.x + Math.sin(P.yaw) * f, P.pos.y + 1.5 + (S.has.sled ? 0.12 : 0), P.pos.z + Math.cos(P.yaw) * f,
                 Math.sin(P.yaw) * 0.5 + S.wind.x * 0.08 + (Math.random() - 0.5) * 0.2, 0.25,
                 Math.cos(P.yaw) * 0.5 + S.wind.z * 0.08 + (Math.random() - 0.5) * 0.2,
                 COL.breath, 0.2, 1.3, { alpha: 0.28 * (0.5 + S.night * 0.7), grow: 2.5, drag: 1.2 });
@@ -935,10 +1148,10 @@ function updateTeam(dt) {
     if (!teamDogs.length) return;
     const fwdX = Math.sin(P.yaw), fwdZ = Math.cos(P.yaw), rX = Math.cos(P.yaw), rZ = -Math.sin(P.yaw);
     const arr = traces.geometry.attributes.position.array;
-    const frontX = P.pos.x + fwdX * 1.55, frontZ = P.pos.z + fwdZ * 1.55, fy = P.pos.y + 0.25;
+    const frontX = P.pos.x + fwdX * 2.05, frontZ = P.pos.z + fwdZ * 2.05, fy = P.pos.y + 0.25;
     teamDogs.forEach((d, i) => {
         const s = i === 0 ? -0.6 : 0.6;
-        tmpV.set(P.pos.x + fwdX * 2.3 + rX * s, 0, P.pos.z + fwdZ * 2.3 + rZ * s);
+        tmpV.set(P.pos.x + fwdX * 2.95 + rX * s, 0, P.pos.z + fwdZ * 2.95 + rZ * s);
         const k = Math.min(1, dt * 8);
         const before = d.pos.clone();
         d.pos.x += (tmpV.x - d.pos.x) * k;
@@ -946,20 +1159,11 @@ function updateTeam(dt) {
         d.pos.y = Math.max(0, W.groundHeight(d.pos.x, d.pos.z));
         const sp = before.distanceTo(d.pos) / Math.max(dt, 1e-4);
         d.yaw = angleLerp(d.yaw, P.yaw, k);
-        d.phase += dt * sp * 2.6;
-        const sw = Math.sin(d.phase) * 0.7 * Math.min(1, sp / 2.5);
-        d.parts.legs[0].rotation.x = sw;
-        d.parts.legs[1].rotation.x = -sw;
-        const sitK = P.speed < 0.5 ? 1 : 0;
-        d.sit += (sitK - d.sit) * Math.min(1, dt * 4);
-        d.parts.legs[2].rotation.x = -sw + d.sit * 1.3;
-        d.parts.legs[3].rotation.x = sw + d.sit * 1.3;
-        d.inner.rotation.x = -d.sit * 0.35;
-        d.parts.tail.rotation.y = Math.sin(S.time * 7 + i) * 0.4;
+        d.animate(dt, sp, G, { sit: P.speed < 0.5 ? 1 : 0, pant: sp > 3 });
         d.root.position.copy(d.pos);
         d.root.rotation.y = d.yaw;
         d.blob.position.set(d.pos.x, d.pos.y + 0.03, d.pos.z);
-        d.blob.visible = d.pos.y < 0.05;
+        d.blob.material.opacity = d.pos.y < 0.05 ? 0.36 : 0.2;
         arr.set([frontX, fy, frontZ, d.pos.x, d.pos.y + 0.4, d.pos.z], i * 6);
     });
     const lead = siku.state === 'harness';
@@ -1015,8 +1219,19 @@ function updateHares(dt) {
         }
         collide(h.pos, 0.2);
         h.pos.y = Math.max(0, W.groundHeight(h.pos.x, h.pos.z));
-        h.m.position.set(h.pos.x, h.pos.y + Math.abs(Math.sin(h.hop)) * 0.28, h.pos.z);
-        h.m.rotation.y = h.yaw;
+        // Sætter sig op og lytter, når du nærmer dig; squash-and-stretch i hoppet
+        const alert = dp < 11 && spd === 0 ? 1 : 0;
+        h.alertK += (alert - h.alertK) * Math.min(1, dt * 6);
+        const hs = Math.sin(h.hop);
+        h.m.position.set(h.pos.x, h.pos.y + Math.abs(hs) * 0.28, h.pos.z);
+        h.m.rotation.y = h.alertK > 0.5 && spd === 0 ? angleLerp(h.yaw, Math.atan2(P.pos.x - h.pos.x, P.pos.z - h.pos.z), 0.6) : h.yaw;
+        h.inner.rotation.x = -0.55 * h.alertK + (spd > 0 ? Math.cos(h.hop) * 0.25 : 0);
+        h.inner.position.y = 0.06 * h.alertK;
+        h.inner.scale.set(1, 1 + (spd > 0 ? hs * hs * 0.18 - 0.06 : 0), 1);
+        h.ears.forEach((e, i) => {
+            e.rotation.x = -0.4 + h.alertK * 0.35 - (spd > 0 ? 0.5 : 0);
+            e.rotation.z = (i ? -1 : 1) * 0.12 + Math.sin(S.time * 11 + i * 2) * 0.06 * h.alertK;
+        });
     }
 }
 
@@ -1027,9 +1242,12 @@ function updateSeals(dt) {
             s.state = 'up';
             s.timer = 7 + Math.random() * 3;
             if (dist2(P.pos, s.hole.x, s.hole.z) < 30) splash(s.hole);
+            ripple(s.hole.x, s.hole.z);
+            ripple(s.hole.x, s.hole.z, 0.35);
         } else if (s.state === 'up' && s.timer <= 0) {
             s.state = 'down';
             s.timer = 8 + Math.random() * 10;
+            ripple(s.hole.x, s.hole.z);
         } else if (s.state === 'gone' && s.timer <= 0) {
             s.state = 'down';
             s.timer = 5;
@@ -1039,6 +1257,7 @@ function updateSeals(dt) {
         s.m.position.set(s.hole.x, s.y + Math.sin(S.time * 2 + s.hole.x) * 0.03, s.hole.z);
         s.m.rotation.y = Math.atan2(P.pos.x - s.hole.x, P.pos.z - s.hole.z) * 0.6 + Math.sin(S.time * 0.7) * 0.4;
         s.m.visible = s.y > -1.2;
+        if (s.state === 'up' && Math.random() < dt * 0.6) ripple(s.hole.x, s.hole.z);
     }
 }
 
@@ -1056,7 +1275,9 @@ function updateBears(dt) {
         else if (!safe && !S.over && d < (S.night > 0.5 ? 16 : 9)) mode = 'chase';
         if (mode === 'chase' && b.mode !== 'chase' && b.alertT <= 0) {
             b.alertT = 25;
+            b.standT = 1.6;
             sound.growl();
+            if (d < 20) shake = Math.max(shake, 0.25);
             toast('⚠️ Nanoq – en isbjørn har fået færten af dig!');
         }
         b.mode = mode;
@@ -1079,6 +1300,8 @@ function updateBears(dt) {
             }
             spd = b.wait > 0 ? 0 : 1.3;
         }
+        b.standT = Math.max(0, b.standT - dt);
+        if (b.standT > 0) spd = 0;
         const dx = b.target.x - b.pos.x, dz = b.target.z - b.pos.z;
         const l = Math.hypot(dx, dz);
         let moved = 0;
@@ -1093,15 +1316,36 @@ function updateBears(dt) {
         const r = Math.hypot(b.pos.x, b.pos.z);
         if (r > W.WORLD_RADIUS) b.pos.multiplyScalar(W.WORLD_RADIUS / r);
         b.pos.y = Math.max(0, W.groundHeight(b.pos.x, b.pos.z));
-        b.phase += dt * moved * 1.6;
-        const sw = Math.sin(b.phase) * 0.5 * Math.min(1, moved / 2);
-        b.legs[0].rotation.x = sw; b.legs[1].rotation.x = -sw; b.legs[2].rotation.x = -sw; b.legs[3].rotation.x = sw;
-        b.head.rotation.y = mode === 'wander' && spd === 0 ? Math.sin(S.time * 0.8) * 0.4 : 0;
+        // Tung, rullende gang; rejser sig og brøler ved alarm
+        b.phase += dt * moved * 1.7;
+        b.walk += (Math.min(1, moved / 2) - b.walk) * Math.min(1, dt * 5);
+        const st = b.standT > 0 ? Math.sin(Math.min(1, (1.6 - b.standT) / 1.6) * Math.PI) : 0;
+        const bs = Math.sin(b.phase), bw = b.walk;
+        b.legs[0].rotation.x = bs * 0.5 * bw - 0.7 * st + Math.sin(S.time * 7) * 0.35 * st;
+        b.legs[1].rotation.x = -bs * 0.5 * bw - 0.7 * st - Math.sin(S.time * 7) * 0.35 * st;
+        b.legs[2].rotation.x = -bs * 0.5 * bw + 1.05 * st;
+        b.legs[3].rotation.x = bs * 0.5 * bw + 1.05 * st;
+        b.pivot.rotation.x = -1.05 * st;
+        b.pivot.rotation.z = Math.sin(b.phase) * 0.06 * bw;
+        b.head.rotation.y = (mode === 'wander' && spd === 0 ? Math.sin(S.time * 0.8) * 0.45 : Math.sin(b.phase * 0.5) * 0.18 * bw);
+        b.head.rotation.x = 0.2 * bw - 0.5 * st + (mode === 'wander' && spd === 0 ? 0.35 + Math.sin(S.time * 3) * 0.05 : 0);
+        if (st > 0.6 && Math.random() < dt * 25) {
+            b.head.getWorldPosition(tmpV);
+            puffs.emit(tmpV.x, tmpV.y, tmpV.z, Math.sin(b.yaw) * 1.5, 0.6, Math.cos(b.yaw) * 1.5, COL.breath, 0.3, 1, { alpha: 0.35, grow: 3, drag: 1.5 });
+        }
         b.group.position.copy(b.pos);
-        b.group.position.y += Math.abs(Math.sin(b.phase)) * 0.04;
+        b.group.position.y += Math.abs(Math.sin(b.phase)) * 0.05 * bw;
+        // Store poteaftryk
+        b.printD = (b.printD || 0) + moved * dt;
+        if (b.printD > 0.9 && b.pos.y > 0.05) {
+            b.printD = 0;
+            b.printSide = -(b.printSide || 1);
+            const px = Math.cos(b.yaw) * 0.3 * b.printSide, pz = -Math.sin(b.yaw) * 0.3 * b.printSide;
+            steps.add(b.pos.x + px, b.pos.y, b.pos.z + pz, b.yaw, 1.6);
+        }
         b.group.rotation.y = b.yaw;
         b.blob.position.set(b.pos.x, b.pos.y + 0.03, b.pos.z);
-        b.blob.visible = b.pos.y < 0.05;
+        b.blob.material.opacity = b.pos.y < 0.05 ? 0.4 : 0.24;
 
         if (mode === 'chase' && d < 1.9 && b.atk <= 0) {
             b.atk = 1.4;
@@ -1147,13 +1391,57 @@ function updateHeaters(dt) {
 
 function updateNodes(dt) {
     for (const n of nodes) {
-        if (n.charges > 0) continue;
+        const g = n.group;
+        if (n.shake > 0) {
+            n.shake = Math.max(0, n.shake - dt);
+            const k = n.shake / 0.35;
+            g.rotation.z = Math.sin(n.shake * 60) * 0.12 * k;
+            g.rotation.y = n.baseRot + Math.sin(n.shake * 45) * 0.08 * k;
+            g.scale.setScalar(n.grow * (1 - 0.12 * Math.sin(k * Math.PI)));
+        }
+        if (n.dying) {
+            n.grow = Math.max(0, n.grow - dt * 3.5);
+            g.scale.set(n.grow * (1 + (1 - n.grow) * 0.3), n.grow, n.grow * (1 + (1 - n.grow) * 0.3));
+            if (n.grow <= 0) {
+                n.dying = false;
+                g.visible = false;
+                n.respawn = 110 + Math.random() * 60;
+            }
+            continue;
+        }
+        if (n.charges > 0) {
+            if (n.grow < 1) {
+                n.grow = Math.min(1, n.grow + dt * 1.5);
+                const e = 1 - Math.pow(1 - n.grow, 3);
+                g.scale.setScalar(e * (1 + Math.sin(n.grow * Math.PI) * 0.12));
+            }
+            continue;
+        }
         n.respawn -= dt;
         if (n.respawn <= 0 && dist2(P.pos, n.x, n.z) > 12) {
             n.charges = n.max;
-            n.group.visible = true;
+            n.grow = 0;
+            g.scale.setScalar(0.001);
+            g.visible = true;
             if (n.collider) n.collider.active = true;
         }
+    }
+}
+
+const pops = [];
+function popIn(obj, dur = 0.55) {
+    obj.scale.setScalar(0.001);
+    pops.push({ obj, t: 0, dur });
+}
+function updatePops(dt) {
+    for (let i = pops.length - 1; i >= 0; i--) {
+        const p = pops[i];
+        p.t += dt;
+        const k = Math.min(1, p.t / p.dur);
+        // Elastisk overshoot
+        const e = k === 1 ? 1 : 1 - Math.pow(2, -9 * k) * Math.cos(k * 9.5);
+        p.obj.scale.set(e, Math.min(1.25, e * (1 + (1 - k) * 0.2)), e);
+        if (k >= 1) { p.obj.scale.setScalar(1); pops.splice(i, 1); }
     }
 }
 
@@ -1161,12 +1449,23 @@ function updateProjectiles(dt) {
     for (let i = projectiles.length - 1; i >= 0; i--) {
         const pr = projectiles[i];
         pr.t += dt / 0.28;
+        if (pr.t < 0) {
+            // Følger hånden under optrækket
+            pr.from.copy(P.pos).y += 1.5;
+            continue;
+        }
+        pr.g.visible = true;
         const t = Math.min(1, pr.t);
         pr.g.position.lerpVectors(pr.from, pr.to, t);
         pr.g.position.y += Math.sin(t * Math.PI) * 0.8;
+        tmpV.lerpVectors(pr.from, pr.to, Math.min(1, t + 0.05));
+        tmpV.y += Math.sin(Math.min(1, t + 0.05) * Math.PI) * 0.8;
+        pr.g.lookAt(tmpV);
+        puffs.emit(pr.g.position.x, pr.g.position.y, pr.g.position.z, 0, 0.1, 0, COL.breath, 0.1, 0.35, { alpha: 0.4, grow: 1 });
         if (t >= 1) {
             scene.remove(pr.g);
             projectiles.splice(i, 1);
+            burst(pr.to, COL.snow, 10, 2.5, 2.5);
             pr.onHit();
         }
     }
@@ -1248,7 +1547,11 @@ function updateClock(dt) {
     if (before > S.t) {
         S.day++;
         S.burstDone = false;
-        toast(`☀️ Dag ${S.day} på isen`);
+        dayCard(`Dag ${S.day}`, 'Morgenen gryr over isen');
+    }
+    if (S.night > 0.6 && S.nightCardDay !== S.day && S.started) {
+        S.nightCardDay = S.day;
+        dayCard('Natten falder på', 'Hold varmen – og se efter nordlyset', `Dag ${S.day}`);
     }
     // Nordlys
     S.auroraRetarget -= dt;
@@ -1271,13 +1574,17 @@ function updateClock(dt) {
 // Visuelt (kører også på titelskærmen)
 // ---------------------------------------------------------------------------
 const camTarget = new THREE.Vector3().copy(P.pos);
+const camGoal = new THREE.Vector3();
+const CAM_DIR = CAM_OFF.clone().normalize();
+let zoomMul = 1;
+post.uniforms.uFade.value = 1;
 let shake = 0;
 const c1 = new THREE.Color(), c2 = new THREE.Color(), c3 = new THREE.Color();
 const K = {
-    sunDay: C('#fff1dc'), sunDusk: C('#ffab6b'), moon: C('#9fb6ff'),
-    skyDay: C('#d6e8ff'), skyDusk: C('#f0c4ae'), skyNight: C('#2a3f66'),
+    sunDay: C('#ffe6c6'), sunDusk: C('#ff9656'), moon: C('#9fb6ff'),
+    skyDay: C('#a9c6ea'), skyDusk: C('#c9a6b8'), skyNight: C('#2a3f66'),
     gndDay: C('#7d93ad'), gndNight: C('#0b1424'),
-    fogDay: C('#cfe0ee'), fogDusk: C('#e2bba8'), fogNight: C('#0b1628'),
+    fogDay: C('#d3e2f0'), fogDusk: C('#e6b9a0'), fogNight: C('#0b1628'),
     stormDay: C('#d9e2ea'), stormNight: C('#27313f'),
     auroraG: C('#2cff9a'), snowNight: C('#7d8fb0'), white: C('#ffffff'),
 };
@@ -1293,7 +1600,8 @@ function updateVisuals(dt) {
     const dusk = Math.max(0, 1 - Math.abs(sunH - 0.02) / 0.32) * day;
     const auroraNow = Math.pow(S.night, 1.5) * Math.pow(1 - S.storm, 2) * S.aurora;
     const az = TAU * S.t;
-    sunDir.set(Math.cos(az), 0.28 + 0.6 * Math.max(0, sunH), Math.sin(az)).normalize();
+    // Arktisk lav sol: lange skygger hele dagen
+    sunDir.set(Math.cos(az), 0.2 + 0.32 * Math.max(0, sunH), Math.sin(az)).normalize();
     moonDir.set(-0.45, 0.8, 0.4).normalize();
     const dir = c3; // genbrug ikke — kun for læsbarhed
     void dir;
@@ -1301,12 +1609,12 @@ function updateVisuals(dt) {
 
     c1.copy(K.sunDay).lerp(K.sunDusk, dusk);
     sun.color.copy(K.moon).lerp(c1, day);
-    sun.intensity = (0.55 + 0.78 * day) * (1 - S.storm * 0.55);
+    sun.intensity = (0.55 + 1.15 * day) * (1 - S.storm * 0.6);
     c2.copy(K.skyDay).lerp(K.skyDusk, dusk);
     hemi.color.copy(K.skyNight).lerp(c2, day);
     hemi.color.lerp(K.auroraG, auroraNow * 0.14);
     hemi.groundColor.copy(K.gndNight).lerp(K.gndDay, day);
-    hemi.intensity = (0.75 + 0.15 * day) * (1 - S.storm * 0.15) + S.storm * 0.2;
+    hemi.intensity = (0.75 - 0.18 * day) * (1 - S.storm * 0.15) + S.storm * 0.25;
 
     c1.copy(K.fogDay).lerp(K.fogDusk, dusk);
     const fog = scene.fog;
@@ -1314,38 +1622,74 @@ function updateVisuals(dt) {
     c2.copy(K.stormNight).lerp(K.stormDay, day);
     fog.color.lerp(c2, S.storm * 0.9);
     fog.color.lerp(K.auroraG, auroraNow * 0.03);
-    fog.near = 95 - S.storm * 18;
-    fog.far = 260 - S.storm * 128;
+    fog.near = 78 - S.storm * 8;
+    fog.far = 230 - S.storm * 100;
     renderer.setClearColor(fog.color);
 
-    // Kamera
-    camTarget.lerp(P.pos, 1 - Math.exp(-5 * dt));
+    // Kamera: kigger lidt frem i bevægelsesretningen, zoomer ud på slæden,
+    // og glider langsomt hen over landskabet på titelskærmen
+    if (!S.started) {
+        const a = S.time * 0.035;
+        camGoal.set(W.SPAWN.x + Math.cos(a) * 10 - 6, P.pos.y, W.SPAWN.z + Math.sin(a) * 10 - 6);
+        camTarget.lerp(camGoal, 1 - Math.exp(-0.8 * dt));
+    } else {
+        const la = S.has.sled ? 0.55 : 0.35;
+        camGoal.set(P.pos.x + clamp(P.vel.x * la, -3, 3), P.pos.y, P.pos.z + clamp(P.vel.z * la, -3, 3));
+        S.camBlend = Math.min(1, (S.camBlend || 0) + dt * 0.5);
+        camTarget.lerp(camGoal, 1 - Math.exp(-(1 + S.camBlend * 3) * dt));
+    }
+    const zoomGoal = S.has.sled && P.speed > 3 ? 1.15 : 1;
+    zoomMul += (zoomGoal - zoomMul) * Math.min(1, dt * 1.2);
+    applyFrustum();
     shake = Math.max(0, shake - dt * 1.5);
     const sh = shake * 0.35 + S.storm * 0.05;
     camera.position.copy(camTarget).add(CAM_OFF);
-    camera.position.x += (Math.random() - 0.5) * sh;
-    camera.position.y += (Math.random() - 0.5) * sh;
+    camera.position.x += (Math.random() - 0.5) * sh + Math.sin(S.time * 0.4) * 0.05;
+    camera.position.y += (Math.random() - 0.5) * sh + Math.sin(S.time * 0.31) * 0.04;
     camera.lookAt(camTarget);
     sun.position.copy(camTarget).addScaledVector(lightDir, 70);
     sun.target.position.copy(camTarget);
+    rim.position.set(camTarget.x - lightDir.x * 50, camTarget.y + 25, camTarget.z - lightDir.z * 50);
+    rim.target.position.copy(camTarget);
+    rim.intensity = (0.22 + S.night * 0.18) * (1 - S.storm * 0.6);
 
-    // Punktlys til de nærmeste flammer
+    // Punktlys til de nærmeste flammer (+ flammeglimt i sneen)
     const lit = heaters.filter((h) => h.lit).sort((a, b) => dist2(a, P.pos.x, P.pos.z) - dist2(b, P.pos.x, P.pos.z));
+    let warmK = 0;
     pointLights.forEach((l, i) => {
         const h = lit[i];
-        if (!h) { l.intensity = 0; return; }
-        const fk = 1 + Math.sin(S.time * 17 + i) * 0.1 + Math.sin(S.time * 29 + h.x) * 0.08;
+        const fu = i === 0 ? lightUniforms.uFire0.value : lightUniforms.uFire1.value;
+        if (!h) { l.intensity = 0; fu.w = 0; return; }
+        const fk = 1 + Math.sin(S.time * 17 + i) * 0.1 + Math.sin(S.time * 29 + h.x) * 0.08 + Math.sin(S.time * 7.3 + i) * 0.06;
+        const low = h.kind === 'fire' ? clamp(h.fuel / 40, 0.35, 1) : 1;
         l.position.set(h.x, h.y + (h.kind === 'fire' ? 1 : 0.6), h.z);
-        l.intensity = (h.kind === 'fire' ? 14 : 5) * fk * (0.6 + S.night * 0.6);
+        l.intensity = (h.kind === 'fire' ? 14 : 5) * fk * low * (0.6 + S.night * 0.6);
         l.color.set(h.kind === 'fire' ? '#ff8a3a' : '#ffb766');
+        fu.set(h.x, h.y + 0.8, h.z, (h.kind === 'fire' ? 3 : 1.2) * fk * low);
+        warmK = Math.max(warmK, clamp(1 - dist2(h, camTarget.x, camTarget.z) / 9, 0, 1) * (h.kind === 'fire' ? 1 : 0.5));
     });
 
-    // Glimmer i sneen
-    W.glitterUniforms.uTime.value = S.time;
-    W.glitterUniforms.uCamPos.value.copy(camTarget);
-    c1.copy(K.sunDay).multiplyScalar(0.9);
-    c2.copy(K.auroraG).multiplyScalar(auroraNow * 0.45).add(c3.copy(K.moon).multiplyScalar(0.3));
-    W.glitterUniforms.uGlint.value.copy(c2).lerp(c1, day).multiplyScalar(1 - S.storm);
+    // Fælles lys til sne og is
+    const L = lightUniforms;
+    L.uTime.value = S.time;
+    L.uLightDir.value.copy(lightDir);
+    L.uLightCol.value.copy(sun.color).multiplyScalar(sun.intensity * (0.35 + 0.65 * day));
+    L.uLightCol.value.lerp(K.auroraG, auroraNow * 0.25 * S.night);
+    L.uEye.value.copy(camTarget).addScaledVector(CAM_DIR, 30);
+    L.uPx.value = 1 / pxPerUnit;
+    L.uGlint.value = (1 - S.storm) * (0.3 + 0.7 * day);
+    L.uShadowTint.value = 0.5 + 0.5 * day;
+    flameUniforms.uTime.value = S.time;
+    windUniform.value.copy(S.wind);
+    for (const h of heaters) {
+        if (!h.lit) continue;
+        h.obj.flames.traverse((o) => {
+            if (!o.userData.billboard) return;
+            o.quaternion.copy(camera.quaternion);
+            o.material.uniforms.uPower.value = (o.userData.basePower ??= o.material.uniforms.uPower.value) *
+                (h.kind === 'fire' ? clamp(h.fuel / 40, 0.45, 1) : 1) * (1 - S.storm * 0.2 * (S.sheltered ? 0 : 1));
+        });
+    }
 
     // Isen
     const u = iceMat.uniforms;
@@ -1397,6 +1741,14 @@ function updateVisuals(dt) {
     snow.uniforms.uOpacity.value = 0.55 + S.snowAmt * 0.35;
     snow.uniforms.uSparkle.value = clamp(1 - S.snowAmt * 2.5, 0, 1);
     snow.update(dt, camTarget, S.wind, S.snowAmt, S.time);
+    // Store, uskarpe fnug tæt på kameraet giver dybde
+    bokeh.uniforms.uColor.value.copy(c1);
+    bokeh.uniforms.uOpacity.value = (0.18 + S.snowAmt * 0.3) * (S.started ? 1 : 0.7);
+    tmpV.copy(camTarget).addScaledVector(CAM_DIR, 32);
+    bokeh.update(dt, tmpV, S.wind, 0.4 + S.snowAmt * 0.6, S.time);
+    // Lav tåge i lavningerne — mest ved skumring, nat og storm
+    c2.copy(fog.color).lerp(K.white, 0.25 * day);
+    mist.update(dt, camTarget, S.wind, 0.05 + dusk * 0.12 + S.night * 0.06 + S.storm * 0.22, c2, S.time);
 
     // Fygning langs jorden i stormen
     if (S.storm > 0.3) {
@@ -1417,6 +1769,9 @@ function updateVisuals(dt) {
     post.uniforms.uTime.value = S.time;
     post.uniforms.uNight.value = S.night;
     post.uniforms.uStorm.value = S.storm;
+    post.uniforms.uWarm.value += (warmK * (0.4 + S.night * 0.6) - post.uniforms.uWarm.value) * Math.min(1, dt * 2);
+    post.uniforms.uWind.value.set(S.wind.x * camRight.x + S.wind.z * camRight.z, S.wind.x * camUp.x + S.wind.z * camUp.z);
+    post.uniforms.uFade.value = Math.max(0, post.uniforms.uFade.value - dt * 0.7);
 
     sound.wind(Math.max(S.storm, S.snowAmt * 0.3) * (S.sheltered ? 0.4 : 1));
 }
@@ -1429,9 +1784,60 @@ const barEls = {
     health: $('st-health'), warm: $('st-warm'), food: $('st-food'), dog: $('st-dog'),
 };
 function setBar(el, v) {
-    el.querySelector('i').style.width = v.toFixed(1) + '%';
+    const w = v.toFixed(1) + '%';
+    const i = el.querySelector('i'), b = el.querySelector('b');
+    if (i.style.width === w) return;
+    // Det lyse spor (b) har forsinket transition og hænger derfor lidt efter, når værdien falder
+    i.style.width = w;
+    b.style.width = w;
     el.classList.toggle('low', v < 25);
 }
+
+let dayCardT = null;
+function dayCard(main, sub, top = '') {
+    const el = $('daycard');
+    el.querySelector('.dc-top').textContent = top;
+    el.querySelector('.dc-main').textContent = main;
+    el.querySelector('.dc-sub').textContent = sub;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    clearTimeout(dayCardT);
+    dayCardT = setTimeout(() => el.classList.remove('show'), 3700);
+}
+
+// Procedurel rim-tekstur til kulde-overlayet
+(function makeFrost() {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 512;
+    const g = cv.getContext('2d');
+    g.strokeStyle = 'rgba(230,245,255,0.55)';
+    g.shadowColor = 'rgba(200,235,255,0.9)';
+    g.shadowBlur = 4;
+    const branch = (x, y, a, len, depth) => {
+        if (depth <= 0 || len < 3) return;
+        const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
+        g.lineWidth = depth * 0.5;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x2, y2);
+        g.stroke();
+        branch(x2, y2, a + (Math.random() - 0.5) * 0.5, len * 0.8, depth - 1);
+        if (Math.random() < 0.7) branch(x2, y2, a + 0.9 + Math.random() * 0.4, len * 0.55, depth - 1);
+        if (Math.random() < 0.7) branch(x2, y2, a - 0.9 - Math.random() * 0.4, len * 0.55, depth - 1);
+    };
+    for (let i = 0; i < 70; i++) {
+        const side = i % 4, t = Math.random() * 512;
+        const [x, y, a] = side === 0 ? [t, 0, Math.PI / 2] : side === 1 ? [512, t, Math.PI] : side === 2 ? [t, 512, -Math.PI / 2] : [0, t, 0];
+        branch(x, y, a + (Math.random() - 0.5) * 0.8, 18 + Math.random() * 26, 6);
+    }
+    const grd = g.createRadialGradient(256, 256, 120, 256, 256, 380);
+    grd.addColorStop(0, 'rgba(200,230,255,0)');
+    grd.addColorStop(1, 'rgba(220,240,255,0.45)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 512, 512);
+    $('ov-frost').style.backgroundImage = `url(${cv.toDataURL()})`;
+})();
 function objective() {
     const I = S.inv, H = S.has;
     if (!S.builtFire) {
@@ -1466,19 +1872,29 @@ function updateHUD(dt) {
     $('day').textContent = `Dag ${S.day} ${icon}`;
     $('weather').textContent = S.weather === 'storm' ? '❄️ Snestorm' : S.weather === 'snow' ? '🌨️ Snefald' : (S.night > 0.6 ? '✨ Klart' : '☁️ Klart');
     $('cairns').textContent = `⛰️ Varder ${S.cairnsFound}/${cairns.length}` + (S.sheltered ? ' · ⛺ i ly' : '');
-    $('objective').textContent = objective();
-    const chips = Object.entries(S.inv).filter(([, v]) => v > 0).map(([k, v]) => `<span class="chip">${ITEMS[k].icon} ${v}</span>`).join('');
+    const obj = objective();
+    const objEl = $('objective');
+    if (objEl.textContent !== obj) {
+        if (objEl.textContent) { objEl.classList.remove('flash'); void objEl.offsetWidth; objEl.classList.add('flash'); }
+        objEl.textContent = obj;
+    }
+    const chips = Object.entries(S.inv).filter(([, v]) => v > 0).map(([k, v]) => `<span class="chip" data-k="${k}">${ITEMS[k].icon} ${v}</span>`).join('');
     const strip = $('inv-strip');
     if (strip.innerHTML !== chips) strip.innerHTML = chips;
     $('btn-eat').style.opacity = EAT_ORDER.some((k) => S.inv[k] > 0) ? 1 : 0.4;
 
     const it = getInteraction();
+    const hf = highlightFor(it);
+    hl.get = hf ? hf[0] : null;
+    if (hf) hl.r = hf[1];
     const key = it.icon + it.label + !!it.disabled;
     if (key !== lastAction) {
         lastAction = key;
         actionEl.querySelector('.ic').textContent = it.icon;
         actionEl.querySelector('.lbl').textContent = it.label;
         actionEl.classList.toggle('disabled', !!it.disabled);
+        actionEl.classList.add('swap');
+        setTimeout(() => actionEl.classList.remove('swap'), 180);
     }
 
     // Kompas mod nærmeste varde
@@ -1503,10 +1919,10 @@ function updateHUD(dt) {
 // ---------------------------------------------------------------------------
 // Løkke
 // ---------------------------------------------------------------------------
-function resize() {
-    const w = innerWidth, h = innerHeight, a = w / h;
-    renderer.setSize(w, h);
-    const base = ZOOMS[zoomIdx];
+let internalH = 540;
+function applyFrustum() {
+    const a = innerWidth / innerHeight;
+    const base = ZOOMS[zoomIdx] * zoomMul;
     viewH = a < 1 ? (base * 0.95) / a : base;
     const viewW = viewH * a;
     camera.left = -viewW / 2;
@@ -1514,11 +1930,16 @@ function resize() {
     camera.top = viewH / 2;
     camera.bottom = -viewH / 2;
     camera.updateProjectionMatrix();
-    const ih = post.setSize(w, h);
-    pxPerUnit = (post.enabled ? ih : renderer.domElement.height) / viewH;
+    pxPerUnit = (post.enabled ? internalH : renderer.domElement.height) / viewH;
     snow.uniforms.uScale.value = pxPerUnit;
+    bokeh.uniforms.uScale.value = pxPerUnit;
     sparks.uniforms.uScale.value = pxPerUnit;
     puffs.uniforms.uScale.value = pxPerUnit;
+}
+function resize() {
+    renderer.setSize(innerWidth, innerHeight);
+    internalH = post.setSize(innerWidth, innerHeight);
+    applyFrustum();
     ghostJoy();
 }
 addEventListener('resize', resize);
@@ -1526,16 +1947,22 @@ resize();
 
 $('btn-start').addEventListener('click', () => {
     sound.init();
+    sound.startMusic();
     S.started = true;
     S.paused = false;
-    $('screen-start').classList.add('hidden');
+    const scr0 = $('screen-start');
+    scr0.classList.add('leaving');
+    setTimeout(() => scr0.classList.add('hidden'), 800);
     $('hud').classList.remove('hidden');
     $('buttons').classList.remove('hidden');
     ghostJoy();
-    toast('Solen går ned. Saml tømmer og sten – og byg et bål før natten.');
-    setTimeout(() => toast('🐕 Siku følger dig. Hun snuser ting op og advarer mod isbjørne.'), 3200);
+    dayCard('Dag 1', 'Solen går ned over isen', 'Nordlysets Spor');
+    setTimeout(() => toast('Saml tømmer og sten – og byg et bål før natten.'), 3000);
+    setTimeout(() => toast('🐕 Siku følger dig. Hun snuser ting op og advarer mod isbjørne.'), 6200);
 });
 
+const IDLE_CTX = { speed: 0, onIce: false, sled: false, idle: 5, cold: 0, fire: 0, storm: 0, windSide: 0, sliding: 0, turn: 0, dead: false };
+Object.defineProperty(IDLE_CTX, 'dead', { get: () => S.over });
 const clock = new THREE.Clock();
 function loop() {
     requestAnimationFrame(loop);
@@ -1547,6 +1974,8 @@ function loop() {
         if (!S.over) {
             updatePlayer(dt);
             handleAction(dt);
+        } else {
+            anim.update(dt, IDLE_CTX);
         }
         updateTeam(dt);
         updateHares(dt);
@@ -1555,18 +1984,28 @@ function loop() {
         updateHeaters(dt);
         updateNodes(dt);
         updateProjectiles(dt);
+        updatePops(dt);
+        updateRipples(dt);
         if (!S.over) updateSurvival(dt);
     } else if (!S.started) {
         S.time += dt;
         S.aTime += dt;
         updateTeam(dt);
+        anim.update(dt, IDLE_CTX);
     }
     updateVisuals(dt);
     updateFloaters(dt);
+    updateHighlight(dt);
     updateToast(dt);
+    sound.musicUpdate(dt, S.night, S.storm);
     if (S.started) updateHUD(dt);
     post.render(scene, camera);
 }
 loop();
+{
+    const sb = $('btn-start');
+    sb.disabled = false;
+    sb.textContent = 'Begynd rejsen';
+}
 
-window.__game = { S, P, siku, scene, camera, getInteraction, doAction, craft, RECIPES, nodes, seals, bears, heaters };
+window.__game = { S, P, siku, scene, camera, post, anim, lightUniforms, getInteraction, doAction, craft, RECIPES, nodes, seals, bears, heaters };

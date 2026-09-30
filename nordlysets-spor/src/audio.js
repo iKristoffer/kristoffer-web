@@ -69,6 +69,88 @@ export class Sound {
         lfo2.start();
     }
 
+    /** Stille stemningsmusik: bløde akkorder + spredte klokketoner (flere om natten). */
+    startMusic() {
+        if (!this.ctx || this.music) return;
+        const ctx = this.ctx;
+        const out = ctx.createGain();
+        out.gain.value = 0;
+        out.connect(this.master);
+        const delay = ctx.createDelay(1.5);
+        delay.delayTime.value = 0.42;
+        const fb = ctx.createGain();
+        fb.gain.value = 0.45;
+        const dlp = ctx.createBiquadFilter();
+        dlp.type = 'lowpass';
+        dlp.frequency.value = 2200;
+        delay.connect(dlp).connect(fb).connect(delay);
+        delay.connect(out);
+        const padLP = ctx.createBiquadFilter();
+        padLP.type = 'lowpass';
+        padLP.frequency.value = 850;
+        const pad = ctx.createGain();
+        pad.gain.value = 0.32;
+        padLP.connect(pad);
+        pad.connect(out);
+        pad.connect(delay);
+        const voices = [0, 1, 2].map(() => {
+            const g = ctx.createGain();
+            g.gain.value = 0.33;
+            g.connect(padLP);
+            const oscs = [-4, 4].map((det, i) => {
+                const o = ctx.createOscillator();
+                o.type = i ? 'sine' : 'triangle';
+                o.detune.value = det;
+                o.connect(g);
+                o.start();
+                return o;
+            });
+            return { g, oscs };
+        });
+        this.music = { out, delay, voices, chord: -1, t: 0, bellT: 4 };
+        this.nextChord();
+    }
+
+    nextChord() {
+        const CH = [[146.83, 220, 293.66], [116.54, 174.61, 233.08], [130.81, 196, 261.63], [110, 164.81, 220]];
+        const m = this.music;
+        m.chord = (m.chord + 1) % CH.length;
+        const t = this.ctx.currentTime;
+        m.voices.forEach((v, i) => v.oscs.forEach((o) => o.frequency.setTargetAtTime(CH[m.chord][i], t, 1.8)));
+    }
+
+    bell() {
+        const NOTES = [587.33, 698.46, 783.99, 880, 1046.5, 1174.66];
+        const f = NOTES[Math.floor(Math.random() * NOTES.length)];
+        const ctx = this.ctx, t = ctx.currentTime;
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = f;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.05, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+        o.connect(g);
+        g.connect(this.music.out);
+        g.connect(this.music.delay);
+        o.start(t);
+        o.stop(t + 2.5);
+    }
+
+    musicUpdate(dt, night, storm) {
+        const m = this.music;
+        if (!m) return;
+        const vol = (0.5 + night * 0.35) * (1 - storm * 0.6);
+        m.out.gain.setTargetAtTime(vol, this.ctx.currentTime, 2.5);
+        m.t += dt;
+        if (m.t > 10) { m.t = 0; this.nextChord(); }
+        m.bellT -= dt;
+        if (m.bellT <= 0) {
+            m.bellT = (night > 0.5 ? 1.4 : 3.5) + Math.random() * 3.5;
+            this.bell();
+        }
+    }
+
     setMuted(m) {
         this.muted = m;
         if (this.master) this.master.gain.value = m ? 0 : 0.7;

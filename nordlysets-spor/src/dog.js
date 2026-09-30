@@ -103,7 +103,7 @@ export class Dog {
     /** Hvor hunden skal stå i spandet, når slæden kører. */
     harnessSpot(G, out) {
         const p = G.player.pos, yaw = G.player.yaw;
-        return out.set(p.x + Math.sin(yaw) * 3.2, 0, p.z + Math.cos(yaw) * 3.2);
+        return out.set(p.x + Math.sin(yaw) * 3.9, 0, p.z + Math.cos(yaw) * 3.9);
     }
 
     decide(G) {
@@ -406,34 +406,116 @@ export class Dog {
         const gh = groundHeight(this.pos.x, this.pos.z);
         this.pos.y = Math.max(gh, 0);
 
-        // Positur og animation
-        const k = Math.min(1, dt * 6);
-        this.lie += (lie - this.lie) * k;
-        this.sit += (sit - this.sit) * k;
-        this.sniff += (sniff - this.sniff) * k;
-        this.phase += dt * (moveSpeed * 2.6 + 0.001);
-        const amp = Math.min(1, moveSpeed / 2.5);
-        const L = this.parts.legs;
-        const sw = Math.sin(this.phase) * 0.7 * amp;
-        L[0].rotation.x = sw - this.lie * 1.4;
-        L[1].rotation.x = -sw - this.lie * 1.4;
-        L[2].rotation.x = -sw + this.lie * 1.4 + this.sit * 1.3;
-        L[3].rotation.x = sw + this.lie * 1.4 + this.sit * 1.3;
-        this.inner.position.y = -this.lie * 0.22 - this.sit * 0.08 + Math.abs(Math.sin(this.phase)) * 0.05 * amp;
-        this.inner.rotation.x = -this.sit * 0.35;
-        const head = this.parts.head;
-        head.rotation.x = this.sniff * (0.6 + Math.sin(G.S.time * 9) * 0.12) - this.sit * 0.2 + this.lie * 0.25;
-        head.position.y = 0.64 - this.sniff * 0.12;
-        const wagSpeed = this.state === 'happy' || this.state === 'beg' ? 18 : this.state === 'guard' ? 0 : 7;
-        this.parts.tail.rotation.y = Math.sin(G.S.time * wagSpeed) * (this.state === 'guard' ? 0 : 0.5);
-        this.parts.tail.rotation.x = this.state === 'guard' ? -0.4 : 0;
+        // Ryster sneen af sig efter stormen eller når hun rejser sig fra sneen
+        if (this.prevStorm > 0.6 && G.S.storm < 0.35) this.shakeT = 1;
+        this.prevStorm = G.S.storm;
+        if (this.lie > 0.8 && lie === 0 && Math.random() < 0.35) this.shakeT = 1;
+        if (this.state === 'point' && this.announced && !this.dug) { this.dug = true; this.digT = 1.3; }
+        if (this.state !== 'point') this.dug = false;
+        const pant = moveSpeed > 4 || this.energy < 40 || this.state === 'beg' || this.state === 'happy';
+        this.animate(dt, moveSpeed, G, { lie, sit, sniff, pant, alert: this.state === 'guard' || this.state === 'point' ? 1 : 0 });
 
         this.root.position.copy(this.pos);
         this.root.rotation.y = this.yaw;
         this.blob.position.set(this.pos.x, this.pos.y + 0.03, this.pos.z);
-        this.blob.visible = gh < 0.05;
+        this.blob.material.opacity = gh < 0.05 ? 0.36 : 0.2;
+
+        // Poteaftryk i sneen
+        this.printD = (this.printD || 0) + moveSpeed * dt;
+        if (this.printD > 0.45 && gh > 0.05 && G.fx) {
+            this.printD = 0;
+            this.printSide = -(this.printSide || 1);
+            const px = Math.cos(this.yaw) * 0.1 * this.printSide, pz = -Math.sin(this.yaw) * 0.1 * this.printSide;
+            G.fx.print(this.pos.x + px, this.pos.y, this.pos.z + pz, this.yaw, 0.55);
+        }
 
         // Små lyde
         if (moveSpeed > 1 && Math.sin(this.phase) > 0.95 && gh > 0.05 && Math.random() < 0.2) G.sound.step();
+    }
+
+    /** Fælles animation for Siku og spandets hunde. */
+    animate(dt, speed, G, o = {}) {
+        const p = this.parts, t = G.S.time;
+        const k = Math.min(1, dt * 6);
+        this.lie += ((o.lie || 0) - this.lie) * k;
+        this.sit += ((o.sit || 0) - this.sit) * k;
+        this.sniff += ((o.sniff || 0) - this.sniff) * k;
+        this.alert = (this.alert || 0) + ((o.alert || 0) - (this.alert || 0)) * k;
+        this.gal = (this.gal || 0) + ((speed > 4.6 ? 1 : 0) - (this.gal || 0)) * Math.min(1, dt * 4);
+        const gal = this.gal, amp = Math.min(1, speed / 2.2);
+        this.phase += dt * speed * (Math.PI * 2 / (0.95 + gal * 0.6));
+        const ph = this.phase;
+
+        this.shakeT = Math.max(0, (this.shakeT || 0) - dt);
+        const shake = this.shakeT > 0 ? Math.sin((1 - this.shakeT) * Math.PI) : 0;
+        this.digT = Math.max(0, (this.digT || 0) - dt);
+        const dig = this.digT > 0 ? Math.min(1, this.digT * 3) * Math.min(1, (1.3 - this.digT) * 4) : 0;
+        if (shake > 0.3 && Math.random() < dt * 40 && G.fx) G.fx.snow(this.pos, 0.55, 1, 3.5);
+        if (dig > 0.3 && Math.random() < dt * 30 && G.fx) {
+            const bx = -Math.sin(this.yaw) * 0.4, bz = -Math.cos(this.yaw) * 0.4;
+            G.fx.kick(this.pos.x + Math.sin(this.yaw) * 0.45, this.pos.y + 0.1, this.pos.z + Math.cos(this.yaw) * 0.45, bx * 5, bz * 5);
+        }
+
+        // Ben: trav (diagonale par) glider over i galop (parvis, med rygbøjning)
+        const trot = [-1, 1, 1, -1];
+        const gOff = [0, 0.35, 2.4, 2.75];
+        const lieUp = [-1.45, -1.45, -1.1, -1.1], lieLo = [0.1, 0.1, 1.9, 1.9];
+        for (let i = 0; i < 4; i++) {
+            const ts = Math.sin(ph) * trot[i], tc = Math.cos(ph) * trot[i];
+            const gs = Math.sin(ph + gOff[i]), gc = Math.cos(ph + gOff[i]);
+            const swing = (-ts * 0.55 * (1 - gal) - gs * 0.85 * gal) * amp;
+            const bend = (Math.max(0, -tc) * (1 - gal) + Math.max(0, gc) * gal) * amp;
+            let up = swing + lieUp[i] * this.lie;
+            let lo = (i < 2 ? 1 : -1) * bend * 0.9 + lieLo[i] * this.lie;
+            if (i >= 2) { up += -0.9 * this.sit; lo += 1.6 * this.sit; }
+            if (i < 2 && dig > 0) { up += (-0.6 + Math.sin(t * 24 + i * Math.PI) * 0.8) * dig; lo += 0.6 * dig; }
+            p.legs[i].rotation.x = up;
+            p.lower[i].rotation.x = lo;
+        }
+        p.front.rotation.x = Math.sin(ph) * 0.1 * gal * amp + 0.25 * dig;
+        p.rear.rotation.x = -Math.sin(ph) * 0.12 * gal * amp;
+        const bounce = (Math.abs(Math.sin(ph)) * 0.03 * (1 - gal) + Math.max(0, Math.sin(ph)) * 0.08 * gal) * amp;
+        this.inner.position.y = -this.lie * 0.26 - this.sit * 0.05 + bounce;
+        this.inner.rotation.x = -this.sit * 0.38 + dig * 0.12;
+        this.inner.rotation.z = Math.sin(t * 42) * 0.45 * shake;
+
+        // Hoved, ører, tunge
+        const breathe = Math.sin(t * (o.pant ? 9 : 2)) * (o.pant ? 0.03 : 0.015);
+        p.head.rotation.x = this.sniff * (0.6 + Math.sin(t * 9) * 0.1) - this.sit * 0.15 + this.lie * 0.4
+            - this.alert * 0.15 + Math.sin(ph * 2) * 0.08 * amp + breathe + dig * 0.4;
+        p.head.rotation.z = Math.sin(t * 38) * 0.3 * shake;
+        this.twitchT = (this.twitchT || 2) - dt;
+        const twitch = this.twitchT < 0.15 ? 0.5 : 0;
+        if (this.twitchT < 0) this.twitchT = 1.5 + Math.random() * 4;
+        p.ears.forEach((e, i) => {
+            e.rotation.x = -0.55 * amp * (0.5 + gal * 0.5) + this.alert * 0.2 + Math.sin(ph * 2 + i) * 0.12 * amp - this.lie * 0.3;
+            e.rotation.z = (i ? -1 : 1) * (0.1 + (i === 1 ? twitch : 0) + shake * Math.sin(t * 40) * 0.4);
+        });
+        p.tongue.visible = !!o.pant && this.lie < 0.5;
+        p.tongue.position.y = -0.12 - Math.abs(Math.sin(t * 9)) * 0.015;
+
+        // Hale med fjeder-efterslæb
+        const happy = this.state === 'happy' || this.state === 'beg';
+        const wagSpeed = happy ? 16 : this.state === 'guard' ? 0 : 6;
+        const wagAmp = happy ? 0.7 : this.state === 'guard' ? 0 : 0.35 * (1 - this.lie);
+        const target = Math.sin(t * wagSpeed) * wagAmp;
+        this.tailV = (this.tailV || 0) + ((target - (this.tailA || 0)) * 120 - (this.tailV || 0) * 14) * dt;
+        this.tailA = (this.tailA || 0) + this.tailV * dt;
+        p.tail.rotation.y = this.tailA;
+        p.tail2.rotation.y = this.tailA * 0.8 - this.tailV * 0.02;
+        p.tail.rotation.x = this.state === 'guard' ? -1.3 : -0.9 + gal * 0.45 + this.lie * 0.5;
+
+        // Blink / sover
+        this.blinkT = (this.blinkT ?? 3) - dt;
+        const closed = (this.state === 'rest' && this.lie > 0.8) || this.blinkT < 0.12;
+        if (this.blinkT < 0) this.blinkT = 2 + Math.random() * 4;
+        for (const e of p.eyes) e.scale.y = closed ? 0.15 : 1;
+
+        // Ånde i kulden
+        this.breathT = (this.breathT ?? 1) - dt;
+        if (this.breathT <= 0 && G.fx) {
+            this.breathT = o.pant ? 0.5 : 1.6;
+            G.fx.breath(this.pos.x + Math.sin(this.yaw) * 0.75, this.pos.y + 0.55 - this.lie * 0.2, this.pos.z + Math.cos(this.yaw) * 0.75, this.yaw, 0.12);
+        }
     }
 }

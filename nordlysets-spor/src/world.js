@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { makeSnowMaterial, makeFlame } from './shaders.js';
 
 // ---------------------------------------------------------------------------
 // Tilfældighed og støj
@@ -101,76 +102,41 @@ export function slopeAt(x, z) {
     return Math.hypot(dx, dz) / 1.2;
 }
 
-export const glitterUniforms = {
-    uTime: { value: 0 },
-    uGlint: { value: new THREE.Color(1, 1, 1) },
-    uCamPos: { value: new THREE.Vector3() },
-};
-
-function injectGlitter(mat) {
-    mat.onBeforeCompile = (sh) => {
-        Object.assign(sh.uniforms, glitterUniforms);
-        sh.vertexShader = 'varying vec3 vWPos;\n' + sh.vertexShader.replace(
-            '#include <project_vertex>',
-            '#include <project_vertex>\n    vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
-        );
-        sh.fragmentShader = [
-            'uniform float uTime;',
-            'uniform vec3 uGlint;',
-            'uniform vec3 uCamPos;',
-            'varying vec3 vWPos;',
-            'float ghash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }',
-            '',
-        ].join('\n') + sh.fragmentShader.replace('#include <opaque_fragment>', `
-    vec3 gcell = floor(vWPos * 9.0);
-    float gh = ghash(gcell);
-    float tw = sin(uTime * 2.0 + gh * 60.0 + dot(uCamPos.xz, vec2(1.7, 2.3)) * (0.5 + gh));
-    outgoingLight += uGlint * step(0.99, gh) * pow(max(tw, 0.0), 12.0);
-    #include <opaque_fragment>`);
-    };
-}
-
 export function buildTerrain() {
     for (let iz = 0; iz <= SEG; iz++) {
         for (let ix = 0; ix <= SEG; ix++) {
             grid[iz * (SEG + 1) + ix] = heightAt(-HALF + ix * CELL, -HALF + iz * CELL);
         }
     }
-    let geo = new THREE.PlaneGeometry(WORLD, WORLD, SEG, SEG);
+    const geo = new THREE.PlaneGeometry(WORLD, WORLD, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
-    const pos0 = geo.attributes.position;
-    for (let i = 0; i < pos0.count; i++) pos0.setY(i, grid[i]);
-    geo = geo.toNonIndexed();
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setY(i, grid[i]);
     geo.computeVertexNormals();
 
-    const p = geo.attributes.position, n = geo.attributes.normal;
+    const n = geo.attributes.normal;
     const cols = new Float32Array(p.count * 3);
-    const cSnow = new THREE.Color('#eef4fb'), cSnow2 = new THREE.Color('#c9d9ea');
-    const cRock = new THREE.Color('#6a6d76'), cRock2 = new THREE.Color('#555861');
-    const cShore = new THREE.Color('#b9cadb');
+    const cSnow = new THREE.Color('#f1f6fc'), cSnow2 = new THREE.Color('#cddcec');
+    const cRock = new THREE.Color('#6a6d76'), cRock2 = new THREE.Color('#4f525b');
+    const cShore = new THREE.Color('#bccddf');
     const tmp = new THREE.Color();
-    for (let i = 0; i < p.count; i += 3) {
-        const cx = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3;
-        const cy = (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3;
-        const cz = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
         const ny = n.getY(i);
-        const v = vnoise(cx * 0.25, cz * 0.25) * 0.5 + 0.5;
-        tmp.copy(cSnow).lerp(cSnow2, clamp(v * 0.5 + (1 - ny) * 1.6, 0, 1));
-        let rock = smoothstep(0.24, 0.4, 1 - ny);
-        if (cy > 3) rock += smoothstep(0.66, 0.78, vnoise(cx * 0.09 + 40, cz * 0.09)) * 0.5;
+        const v = vnoise(x * 0.25, z * 0.25) * 0.5 + 0.5;
+        tmp.copy(cSnow).lerp(cSnow2, clamp(v * 0.45 + (1 - ny) * 1.5, 0, 1));
+        let rock = smoothstep(0.22, 0.38, 1 - ny);
+        if (y > 3) rock += smoothstep(0.66, 0.78, vnoise(x * 0.09 + 40, z * 0.09)) * 0.5;
         if (rock > 0) tmp.lerp(v > 0.5 ? cRock : cRock2, Math.min(1, rock));
-        if (cy < 0.35) tmp.lerp(cShore, 0.6 * clamp(1 - cy / 0.35, 0, 1));
-        for (let k = 0; k < 3; k++) {
-            cols[(i + k) * 3] = tmp.r;
-            cols[(i + k) * 3 + 1] = tmp.g;
-            cols[(i + k) * 3 + 2] = tmp.b;
-        }
+        if (y < 0.35) tmp.lerp(cShore, 0.55 * clamp(1 - y / 0.35, 0, 1));
+        cols[i * 3] = tmp.r;
+        cols[i * 3 + 1] = tmp.g;
+        cols[i * 3 + 2] = tmp.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    injectGlitter(mat);
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(geo, makeSnowMaterial());
     mesh.receiveShadow = true;
+    mesh.castShadow = true;
     return mesh;
 }
 
@@ -211,10 +177,22 @@ export const softTex = makeSoftTexture();
 export function makeBlob(size, opacity = 0.35) {
     const m = new THREE.Mesh(
         new THREE.PlaneGeometry(size, size).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ map: softTex, color: 0x000000, transparent: true, opacity, depthWrite: false })
+        new THREE.MeshBasicMaterial({
+            map: softTex, color: '#0a1424', transparent: true, opacity, depthWrite: false,
+            polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+        })
     );
     m.renderOrder = 3;
     return m;
+}
+
+/** Blød kontaktskygge som barn af et objekt, der står på jorden. */
+export function contactShadow(parent, w, d = w, opacity = 0.32) {
+    const b = makeBlob(1, opacity);
+    b.scale.set(w, 1, d);
+    b.position.y = 0.03;
+    parent.add(b);
+    return b;
 }
 
 /** Blød additiv glorie — giver det “pre-renderede” lys-look. */
@@ -229,66 +207,6 @@ export function makeGlow(color, size, opacity = 0.6) {
 // ---------------------------------------------------------------------------
 // Figurer
 // ---------------------------------------------------------------------------
-export function makePlayer() {
-    const group = new THREE.Group();
-    const model = new THREE.Group();
-    group.add(model);
-    const mats = {
-        coat: new THREE.MeshLambertMaterial({ color: '#7a5236', flatShading: true }),
-        fur: new THREE.MeshLambertMaterial({ color: '#eadfcb', flatShading: true }),
-        skin: new THREE.MeshLambertMaterial({ color: '#c8966c', flatShading: true }),
-        pants: new THREE.MeshLambertMaterial({ color: '#3b2c22', flatShading: true }),
-        boots: new THREE.MeshLambertMaterial({ color: '#4a392b', flatShading: true }),
-    };
-    const body = mk(new THREE.CylinderGeometry(0.3, 0.44, 0.8, 8), mats.coat, 0, 0.98, 0);
-    const hem = mk(new THREE.TorusGeometry(0.42, 0.07, 5, 10), mats.fur, 0, 0.6, 0);
-    hem.rotation.x = Math.PI / 2;
-    const hood = mk(new THREE.SphereGeometry(0.3, 10, 8), mats.coat, 0, 1.55, -0.03);
-    const face = mk(new THREE.SphereGeometry(0.19, 8, 6), mats.skin, 0, 1.55, 0.13);
-    const ruff = mk(new THREE.TorusGeometry(0.2, 0.07, 5, 10), mats.fur, 0, 1.55, 0.19);
-    const eyeG = new THREE.BoxGeometry(0.045, 0.035, 0.02);
-    const eyeL = mk(eyeG, '#1a1a1a', -0.07, 1.58, 0.315);
-    const eyeR = mk(eyeG, '#1a1a1a', 0.07, 1.58, 0.315);
-    model.add(body, hem, hood, face, ruff, eyeL, eyeR);
-
-    const legG = new THREE.BoxGeometry(0.17, 0.5, 0.2).translate(0, -0.25, 0);
-    const bootG = new THREE.BoxGeometry(0.2, 0.18, 0.28).translate(0, -0.5, 0.03);
-    const legs = [-1, 1].map((s) => {
-        const piv = new THREE.Group();
-        piv.position.set(0.13 * s, 0.6, 0);
-        piv.add(mk(legG, mats.pants), mk(bootG, mats.boots));
-        model.add(piv);
-        return piv;
-    });
-    const armG = new THREE.BoxGeometry(0.14, 0.5, 0.15).translate(0, -0.25, 0);
-    const mitG = new THREE.SphereGeometry(0.09, 6, 5).translate(0, -0.53, 0);
-    const arms = [-1, 1].map((s) => {
-        const piv = new THREE.Group();
-        piv.position.set(0.37 * s, 1.3, 0);
-        piv.rotation.z = 0.12 * s;
-        piv.add(mk(armG, mats.coat), mk(mitG, mats.fur));
-        model.add(piv);
-        return piv;
-    });
-    const harpoon = makeSpear();
-    harpoon.position.set(0, -0.5, 0.25);
-    harpoon.rotation.x = -0.25;
-    harpoon.visible = false;
-    arms[1].add(harpoon);
-
-    // Silhuet, når figuren står bag bjerge (tegnes før selve figuren)
-    const silMat = new THREE.MeshBasicMaterial({ color: '#ffcf8a', depthFunc: THREE.GreaterDepth, depthWrite: false });
-    const meshes = [];
-    model.traverse((o) => { if (o.isMesh) meshes.push(o); });
-    for (const m of meshes) {
-        const s = new THREE.Mesh(m.geometry, silMat);
-        s.renderOrder = 1;
-        m.add(s);
-        m.renderOrder = 2;
-    }
-    return { group, model, legs, arms, body, mats, harpoon };
-}
-
 export function makeSpear() {
     const g = new THREE.Group();
     const shaft = mk(new THREE.CylinderGeometry(0.025, 0.025, 1.5, 5), '#8a6644');
@@ -301,40 +219,63 @@ export function makeSpear() {
 
 export function makeDog(fur = '#8a8f99') {
     const g = new THREE.Group();
-    const white = '#eceae4';
-    const body = mk(new THREE.BoxGeometry(0.34, 0.32, 0.75), fur, 0, 0.45, 0);
-    const belly = mk(new THREE.BoxGeometry(0.3, 0.1, 0.6), white, 0, 0.3, 0);
-    const chest = mk(new THREE.BoxGeometry(0.3, 0.3, 0.12), white, 0, 0.45, 0.36);
-    g.add(body, belly, chest);
-    const head = new THREE.Group();
-    head.position.set(0, 0.64, 0.42);
+    const white = '#eceae4', dark = '#151515';
+    const piv = (parent, x, y, z) => {
+        const o = new THREE.Group();
+        o.position.set(x, y, z);
+        parent.add(o);
+        return o;
+    };
+    // Forparti og bagparti bøjer hver for sig (rygbøjning i galop)
+    const front = piv(g, 0, 0.45, 0.1);
+    front.add(mk(new THREE.BoxGeometry(0.34, 0.34, 0.44), fur, 0, 0, 0.06));
+    front.add(mk(new THREE.BoxGeometry(0.3, 0.3, 0.12), white, 0, -0.02, 0.28));
+    front.add(mk(new THREE.BoxGeometry(0.38, 0.2, 0.2), fur, 0, 0.1, 0.22));
+    const rear = piv(g, 0, 0.45, -0.1);
+    rear.add(mk(new THREE.BoxGeometry(0.32, 0.3, 0.42), fur, 0, 0, -0.1));
+    rear.add(mk(new THREE.BoxGeometry(0.28, 0.1, 0.5), white, 0, -0.15, 0.02));
+
+    const head = piv(front, 0, 0.2, 0.34);
     head.add(
-        mk(new THREE.BoxGeometry(0.28, 0.26, 0.28), fur),
-        mk(new THREE.BoxGeometry(0.16, 0.13, 0.18), white, 0, -0.05, 0.19),
-        mk(new THREE.BoxGeometry(0.06, 0.05, 0.04), '#151515', 0, -0.01, 0.29),
-        mk(new THREE.BoxGeometry(0.04, 0.035, 0.02), '#151515', -0.07, 0.05, 0.145),
-        mk(new THREE.BoxGeometry(0.04, 0.035, 0.02), '#151515', 0.07, 0.05, 0.145),
+        mk(new THREE.BoxGeometry(0.28, 0.25, 0.27), fur),
+        mk(new THREE.BoxGeometry(0.3, 0.12, 0.12), white, 0, -0.07, 0.06),
+        mk(new THREE.BoxGeometry(0.15, 0.12, 0.19), white, 0, -0.05, 0.2),
+        mk(new THREE.BoxGeometry(0.07, 0.05, 0.04), dark, 0, -0.005, 0.3),
     );
-    for (const s of [-1, 1]) {
-        const ear = mk(new THREE.ConeGeometry(0.06, 0.15, 4), fur, 0.08 * s, 0.19, -0.03);
-        head.add(ear);
-    }
-    g.add(head);
-    const tail = new THREE.Group();
-    tail.position.set(0, 0.58, -0.36);
-    const tailM = mk(new THREE.TorusGeometry(0.12, 0.045, 5, 8, Math.PI * 1.3), white, 0, 0.1, 0);
-    tailM.rotation.y = Math.PI / 2;
-    tail.add(tailM);
-    g.add(tail);
-    const legG = new THREE.BoxGeometry(0.09, 0.3, 0.09).translate(0, -0.15, 0);
-    const legs = [[-0.11, 0.25], [0.11, 0.25], [-0.11, -0.25], [0.11, -0.25]].map(([x, z]) => {
-        const piv = new THREE.Group();
-        piv.position.set(x, 0.32, z);
-        piv.add(mk(legG, fur));
-        g.add(piv);
-        return piv;
+    const eyes = [-1, 1].map((s) => {
+        const e = mk(new THREE.BoxGeometry(0.045, 0.035, 0.02), dark, 0.07 * s, 0.05, 0.14);
+        head.add(e);
+        return e;
     });
-    return { group: g, legs, tail, head, body };
+    const ears = [-1, 1].map((s) => {
+        const ep = piv(head, 0.08 * s, 0.12, -0.03);
+        ep.add(mk(new THREE.ConeGeometry(0.06, 0.16, 4).translate(0, 0.08, 0), fur));
+        return ep;
+    });
+    const tongue = mk(new THREE.BoxGeometry(0.06, 0.02, 0.12), '#d4687a', 0, -0.12, 0.25);
+    tongue.rotation.x = 0.5;
+    tongue.visible = false;
+    head.add(tongue);
+
+    const legG = new THREE.BoxGeometry(0.09, 0.18, 0.1).translate(0, -0.09, 0);
+    const lowG = new THREE.BoxGeometry(0.075, 0.16, 0.08).translate(0, -0.08, 0);
+    const pawG = new THREE.BoxGeometry(0.09, 0.04, 0.12).translate(0, -0.17, 0.02);
+    const legs = [], lower = [];
+    for (const [parent, x, z] of [[front, -0.11, 0.18], [front, 0.11, 0.18], [rear, -0.11, -0.22], [rear, 0.11, -0.22]]) {
+        const up = piv(parent, x, -0.12, z);
+        up.add(mk(legG, fur));
+        const lo = piv(up, 0, -0.17, 0);
+        lo.add(mk(lowG, fur), mk(pawG, white));
+        legs.push(up);
+        lower.push(lo);
+    }
+    const tail = piv(rear, 0, 0.12, -0.32);
+    tail.add(mk(new THREE.BoxGeometry(0.08, 0.08, 0.2).translate(0, 0, -0.1), fur));
+    tail.rotation.x = -0.9;
+    const tail2 = piv(tail, 0, 0, -0.19);
+    tail2.add(mk(new THREE.BoxGeometry(0.07, 0.07, 0.18).translate(0, 0, -0.09), white));
+    tail2.rotation.x = -0.9;
+    return { group: g, legs, lower, tail, tail2, head, front, rear, ears, eyes, tongue, body: front };
 }
 
 export function makeBear() {
@@ -375,8 +316,17 @@ export function makeHare() {
     const e1 = mk(earG, c, -0.05, 0.42, 0.17), e2 = mk(earG, c, 0.05, 0.42, 0.17);
     e1.rotation.x = e2.rotation.x = -0.4;
     const tips = mk(new THREE.BoxGeometry(0.15, 0.04, 0.05), '#222', 0, 0.62, 0.1);
+    tips.visible = false;
+    e1.add(mk(new THREE.BoxGeometry(0.045, 0.05, 0.075), '#222', 0, 0.2, 0));
+    e2.add(mk(new THREE.BoxGeometry(0.045, 0.05, 0.075), '#222', 0, 0.2, 0));
     g.add(body, head, e1, e2, tips, mk(new THREE.BoxGeometry(0.03, 0.03, 0.02), '#222', 0.07, 0.37, 0.3));
-    return { group: g };
+    const tail = mk(new THREE.SphereGeometry(0.07, 5, 4), c, 0, 0.24, -0.25);
+    g.add(tail);
+    const inner = new THREE.Group();
+    while (g.children.length) inner.add(g.children[0]);
+    g.add(inner);
+    contactShadow(g, 0.8, 0.9, 0.3);
+    return { group: g, inner, ears: [e1, e2] };
 }
 
 export function makeSeal() {
@@ -391,33 +341,83 @@ export function makeSeal() {
     return { group: g };
 }
 
+// Sten: forvredet icosaeder med snehætte på de opadvendte flader og spredt lav
+const rockMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+const RC = {
+    rock: [new THREE.Color('#7d818a'), new THREE.Color('#6b6f78'), new THREE.Color('#8b8d92')],
+    dark: new THREE.Color('#4c4f57'), snow: new THREE.Color('#eef4fb'), snow2: new THREE.Color('#d9e5f2'),
+    lichen: new THREE.Color('#b08a3e'), lichen2: new THREE.Color('#8a9a5a'),
+};
+export function makeRockMesh(rng, s, snowy = 0.55) {
+    const geo = new THREE.IcosahedronGeometry(s, 1);
+    const p = geo.attributes.position;
+    const sx = 0.8 + rng() * 0.5, sz = 0.8 + rng() * 0.5, sy = 0.55 + rng() * 0.35;
+    const seed = rng() * 100;
+    // Samme hjørne skal flyttes ens (geometrien er ikke-indekseret)
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        const j = 1 + vnoise(x * 2.1 + seed, z * 2.1 + y * 1.7) * 0.22;
+        p.setXYZ(i, x * sx * j, Math.max(-s * 0.25, y * sy * j), z * sz * j);
+    }
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    g.computeVertexNormals();
+    const n = g.attributes.normal, pp = g.attributes.position;
+    const cols = new Float32Array(pp.count * 3);
+    const c = new THREE.Color();
+    for (let i = 0; i < pp.count; i += 3) {
+        const ny = (n.getY(i) + n.getY(i + 1) + n.getY(i + 2)) / 3;
+        const cy = (pp.getY(i) + pp.getY(i + 1) + pp.getY(i + 2)) / 3;
+        const r = rng();
+        if (ny > 1 - snowy && cy > -s * 0.05) c.copy(r < 0.5 ? RC.snow : RC.snow2);
+        else if (r < 0.08) c.copy(r < 0.04 ? RC.lichen : RC.lichen2);
+        else c.copy(RC.rock[Math.floor(r * 3)]).lerp(RC.dark, clamp(-cy / s * 1.2 + 0.1, 0, 0.7));
+        for (let k = 0; k < 3; k++) cols.set([c.r, c.g, c.b], (i + k) * 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    const m = new THREE.Mesh(g, rockMat);
+    m.castShadow = m.receiveShadow = true;
+    return m;
+}
+
 export function makeRock(rng) {
     const g = new THREE.Group();
     const n = 1 + Math.floor(rng() * 3);
-    const cols = ['#6b6f78', '#5a5e67', '#7a7d84'];
     for (let i = 0; i < n; i++) {
-        const s = 0.35 + rng() * 0.45;
-        const m = mk(new THREE.DodecahedronGeometry(s, 0), cols[i % 3], (rng() - 0.5) * 0.9, s * 0.4, (rng() - 0.5) * 0.9);
-        m.scale.set(1, 0.6 + rng() * 0.5, 1);
-        m.rotation.set(rng() * 3, rng() * 3, rng() * 3);
+        const s = (i === 0 ? 0.55 : 0.3) + rng() * 0.35;
+        const m = makeRockMesh(rng, s);
+        m.position.set(i === 0 ? 0 : (rng() - 0.5) * 1.1, s * 0.3, i === 0 ? 0 : (rng() - 0.5) * 1.1);
+        m.rotation.y = rng() * 6;
         g.add(m);
     }
-    const cap = mk(new THREE.SphereGeometry(0.4, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2), '#eef4fb', 0, 0.45, 0);
-    cap.scale.set(1, 0.35, 1);
-    g.add(cap);
     return g;
 }
 
+// Drivtømmer: tykke, sølvgrå stammer med lyse snitflader og sne ovenpå
+const woodMats = [lam('#8a6a4c'), lam('#a8987e'), lam('#6e5440')];
+const woodEnd = lam('#d8c8a6');
+const woodSnow = lam('#eef4fb');
 export function makeDriftwood(rng) {
     const g = new THREE.Group();
     const n = 2 + (rng() < 0.5 ? 1 : 0);
     for (let i = 0; i < n; i++) {
-        const len = 1.2 + rng() * 1.2;
-        const m = mk(new THREE.CylinderGeometry(0.09 + rng() * 0.05, 0.12, len, 6), i % 2 ? '#7c5f43' : '#9a8468',
-            (rng() - 0.5) * 0.6, 0.1 + i * 0.12, (rng() - 0.5) * 0.6);
-        m.rotation.z = Math.PI / 2;
-        m.rotation.y = rng() * Math.PI;
-        g.add(m);
+        const len = 1.4 + rng() * 1.4, r = 0.12 + rng() * 0.07;
+        const log = new THREE.Group();
+        const body = mk(new THREE.CylinderGeometry(r * 0.85, r, len, 7), woodMats[i % 3]);
+        body.rotation.z = Math.PI / 2;
+        const e1 = mk(new THREE.CylinderGeometry(r * 0.8, r * 0.8, 0.02, 7), woodEnd, len / 2, 0, 0);
+        e1.rotation.z = Math.PI / 2;
+        const e2 = mk(new THREE.CylinderGeometry(r * 0.95, r * 0.95, 0.02, 7), woodEnd, -len / 2, 0, 0);
+        e2.rotation.z = Math.PI / 2;
+        const cap = mk(new THREE.BoxGeometry(len * 0.8, 0.05, r * 1.3), woodSnow, 0, r * 0.95, 0);
+        log.add(body, e1, e2, cap);
+        if (rng() < 0.6) {
+            const stub = mk(new THREE.CylinderGeometry(0.03, 0.05, 0.35, 5), woodMats[(i + 1) % 3], (rng() - 0.5) * len * 0.6, r + 0.1, 0);
+            stub.rotation.z = (rng() - 0.5) * 1.2;
+            log.add(stub);
+        }
+        log.position.set((rng() - 0.5) * 0.6, r * 0.8 + i * r * 1.4, (rng() - 0.5) * 0.7);
+        log.rotation.y = rng() * Math.PI;
+        g.add(log);
     }
     return g;
 }
@@ -446,27 +446,39 @@ export function makeWhale() {
 }
 
 const berryGeo = new THREE.SphereGeometry(0.06, 5, 4);
+// Krækling: lave, mørkegrønne tuer med sorte bær og lidt sne
 export function makeBush(rng) {
     const g = new THREE.Group();
-    const b = mk(new THREE.IcosahedronGeometry(0.42, 0), '#4d5b3c', 0, 0.12, 0);
-    b.scale.set(1.2, 0.45, 1);
-    g.add(b);
-    for (let i = 0; i < 7; i++) {
-        const a = rng() * Math.PI * 2, r = rng() * 0.35;
-        g.add(mk(berryGeo, '#2b1d3d', Math.cos(a) * r, 0.25, Math.sin(a) * r));
+    const greens = ['#3f5a3a', '#4f6b44', '#5d6f45'];
+    for (let i = 0; i < 4; i++) {
+        const a = rng() * Math.PI * 2, r = i ? 0.2 + rng() * 0.15 : 0;
+        const s = 0.22 + rng() * 0.12;
+        const tuft = mk(new THREE.IcosahedronGeometry(s, 1), greens[i % 3], Math.cos(a) * r, s * 0.35, Math.sin(a) * r);
+        tuft.scale.set(1.3, 0.55, 1.2);
+        g.add(tuft);
+    }
+    const dust = mk(new THREE.SphereGeometry(0.2, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), '#eef4fb', 0.05, 0.14, -0.05);
+    dust.scale.set(1.4, 0.35, 1.1);
+    g.add(dust);
+    for (let i = 0; i < 9; i++) {
+        const a = rng() * Math.PI * 2, r = rng() * 0.38;
+        g.add(mk(berryGeo, i % 4 ? '#1d1428' : '#6a1f2e', Math.cos(a) * r, 0.2 + rng() * 0.06, Math.sin(a) * r));
     }
     return g;
 }
 
+let cairnSeed = 0;
 export function makeCairn() {
     const g = new THREE.Group();
+    const r = mulberry32(777 + cairnSeed++);
     let y = 0;
-    [0.7, 0.58, 0.48, 0.38, 0.3, 0.22].forEach((s, i) => {
-        const m = mk(new THREE.DodecahedronGeometry(s, 0), i % 2 ? '#6c7079' : '#81858d', (i % 2 - 0.5) * 0.08, y + s * 0.5, 0);
-        m.scale.y = 0.7;
-        m.rotation.y = i;
+    [0.72, 0.6, 0.5, 0.4, 0.32, 0.24].forEach((sz, i) => {
+        const m = makeRockMesh(r, sz, 0.35);
+        m.scale.y = 0.75;
+        m.position.set((r() - 0.5) * 0.1, y + sz * 0.35, (r() - 0.5) * 0.1);
+        m.rotation.y = i * 1.3;
         g.add(m);
-        y += s * 0.85;
+        y += sz * 0.72;
     });
     const ring = new THREE.Mesh(
         new THREE.RingGeometry(1.5, 1.8, 40).rotateX(-Math.PI / 2),
@@ -490,31 +502,38 @@ export function makeCairn() {
 export function makeFire() {
     const g = new THREE.Group();
     const stoneG = new THREE.DodecahedronGeometry(0.14, 0);
-    for (let i = 0; i < 7; i++) {
-        const a = i / 7 * Math.PI * 2;
-        g.add(mk(stoneG, '#6b6f78', Math.cos(a) * 0.5, 0.07, Math.sin(a) * 0.5));
+    for (let i = 0; i < 8; i++) {
+        const a = i / 8 * Math.PI * 2;
+        const st = mk(stoneG, i % 2 ? '#6b6f78' : '#5b5f68', Math.cos(a) * 0.52, 0.07, Math.sin(a) * 0.52);
+        st.rotation.set(i, i * 2, 0);
+        g.add(st);
     }
-    for (let i = 0; i < 3; i++) {
-        const l = mk(new THREE.CylinderGeometry(0.06, 0.07, 0.8, 5), '#4a3322', 0, 0.12, 0);
-        l.rotation.z = Math.PI / 2;
-        l.rotation.y = i * Math.PI / 3;
+    const logMat = lam('#3f2c1d', { emissive: '#2a0a02' });
+    for (let i = 0; i < 4; i++) {
+        const l = mk(new THREE.CylinderGeometry(0.055, 0.07, 0.85, 6), logMat, 0, 0.16, 0);
+        l.rotation.z = Math.PI / 2 - 0.45;
+        l.rotation.y = i * Math.PI / 2 + 0.3;
+        l.position.set(Math.cos(i * Math.PI / 2 + 0.3) * 0.12, 0.2, -Math.sin(i * Math.PI / 2 + 0.3) * 0.12);
         g.add(l);
     }
+    const coals = new THREE.Mesh(new THREE.CircleGeometry(0.34, 12).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: '#ff5a14' }));
+    coals.position.y = 0.05;
     const flames = new THREE.Group();
-    const f1 = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 7), new THREE.MeshBasicMaterial({ color: '#ff7a1f', transparent: true, opacity: 0.9 }));
-    f1.position.y = 0.5;
-    const f2 = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.5, 6), new THREE.MeshBasicMaterial({ color: '#ffe27a' }));
-    f2.position.y = 0.4;
-    flames.add(f1, f2);
-    const halo = makeGlow('#ff8a3a', 3.2, 0.55);
-    halo.position.y = 0.6;
-    flames.add(halo);
+    flames.add(makeFlame(1.05, 1.55, 0.0), makeFlame(0.8, 1.2, 3.1), makeFlame(0.5, 0.85, 7.3));
+    flames.children[1].position.x = 0.08;
+    flames.children[2].material.uniforms.uPower.value = 1.25;
+    flames.position.y = 0.08;
+    const halo = makeGlow('#ff8a3a', 3.4, 0.5);
+    halo.position.y = 0.7;
+    flames.add(halo, coals);
     const glow = new THREE.Mesh(
-        new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2),
+        new THREE.PlaneGeometry(5, 5).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ map: softTex, color: '#ff7a2a', transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })
     );
     glow.position.y = 0.06;
     g.add(flames, glow);
+    contactShadow(g, 1.9, 1.9, 0.4);
     return { group: g, flames, glow, halo };
 }
 
@@ -522,13 +541,17 @@ export function makeQulliq() {
     const g = new THREE.Group();
     g.add(mk(new THREE.CylinderGeometry(0.3, 0.35, 0.25, 7), '#6b6f78', 0, 0.12, 0));
     g.add(mk(new THREE.CylinderGeometry(0.42, 0.34, 0.12, 14, 1, false, 0, Math.PI), '#7d8a78', 0, 0.3, 0));
-    const flame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.78), new THREE.MeshBasicMaterial({ color: '#ffc766' }));
-    flame.position.set(0.03, 0.39, 0);
+    const flames = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+        const f = makeFlame(0.2, 0.3, i * 1.7, 1);
+        f.position.set(0.04, 0.34, -0.3 + i * 0.15);
+        flames.add(f);
+    }
     const halo = makeGlow('#ffb45a', 2.2, 0.5);
     halo.position.y = 0.5;
-    const flames = new THREE.Group();
-    flames.add(flame, halo);
+    flames.add(halo);
     g.add(flames);
+    contactShadow(g, 1.2, 1.2, 0.35);
     return { group: g, flames, halo };
 }
 
@@ -561,20 +584,24 @@ export function makeIgloo() {
     return { group: g, halo };
 }
 
+/** Slæden: føreren står bag på meierne, med opstanderne foran sig. */
 export function makeSled() {
     const g = new THREE.Group();
     const wood = '#8a6644', dark = '#5a3f28';
     for (const x of [-0.38, 0.38]) {
-        g.add(mk(new THREE.BoxGeometry(0.07, 0.1, 2.0), dark, x, 0.05, 0));
-        const tip = mk(new THREE.BoxGeometry(0.07, 0.1, 0.35), dark, x, 0.15, 1.05);
+        g.add(mk(new THREE.BoxGeometry(0.07, 0.1, 2.1), dark, x, 0.05, 0));
+        const tip = mk(new THREE.BoxGeometry(0.07, 0.1, 0.35), dark, x, 0.15, 1.1);
         tip.rotation.x = -0.6;
-        const up = mk(new THREE.BoxGeometry(0.06, 0.7, 0.06), dark, x, 0.45, -0.9);
-        up.rotation.x = -0.2;
+        const up = mk(new THREE.BoxGeometry(0.06, 0.85, 0.06), dark, x, 0.5, -0.62);
+        up.rotation.x = -0.35;
         g.add(tip, up);
     }
-    for (let i = 0; i < 6; i++) g.add(mk(new THREE.BoxGeometry(0.9, 0.05, 0.16), wood, 0, 0.13, -0.75 + i * 0.3));
-    g.add(mk(new THREE.BoxGeometry(0.7, 0.35, 0.8), '#7a5a3c', 0, 0.33, 0.4));
-    g.add(mk(new THREE.BoxGeometry(0.72, 0.06, 0.82), '#3b2c22', 0, 0.52, 0.4));
+    g.add(mk(new THREE.BoxGeometry(0.84, 0.05, 0.05), dark, 0, 0.9, -0.77));
+    for (let i = 0; i < 6; i++) g.add(mk(new THREE.BoxGeometry(0.9, 0.05, 0.16), wood, 0, 0.13, -0.55 + i * 0.3));
+    g.add(mk(new THREE.BoxGeometry(0.7, 0.35, 0.8), '#7a5a3c', 0, 0.33, 0.45));
+    g.add(mk(new THREE.BoxGeometry(0.72, 0.06, 0.82), '#3b2c22', 0, 0.52, 0.45));
+    g.add(mk(new THREE.BoxGeometry(0.4, 0.2, 0.3), '#a07a55', 0.1, 0.65, 0.35));
+    contactShadow(g, 1.4, 2.8, 0.3);
     return g;
 }
 
@@ -639,11 +666,13 @@ export function populate(scene) {
         if (type === 'stone') { group = makeRock(rng); charges = 3; r = 0.9; collR = 0.75; }
         if (type === 'bone') { group = makeWhale(); charges = 4; r = 1.8; collR = 1.1; }
         if (type === 'berries') { group = makeBush(rng); charges = 2; r = 0.6; }
+        const shade = { wood: [2.4, 1.6], stone: [2.3, 2.3], bone: [3.2, 7], berries: [1.4, 1.4] }[type];
+        contactShadow(group, shade[0], shade[1], 0.3);
         const y = Math.max(s.h, 0);
         group.position.set(s.x, y, s.z);
         group.rotation.y = rng() * Math.PI * 2;
         scene.add(group);
-        const node = { type, x: s.x, z: s.z, y, r, charges, max: charges, group, respawn: 0, collider: null };
+        const node = { type, x: s.x, z: s.z, y, r, charges, max: charges, group, respawn: 0, collider: null, shake: 0, grow: 1, baseRot: group.rotation.y };
         if (collR) {
             node.collider = { x: s.x, z: s.z, r: collR, active: true };
             colliders.push(node.collider);
@@ -675,6 +704,7 @@ export function populate(scene) {
     for (const s of cairnSpots) {
         if (!s) continue;
         const c = makeCairn();
+        contactShadow(c.group, 2.2, 2.2, 0.4);
         c.group.position.set(s.x, s.h, s.z);
         scene.add(c.group);
         const collider = { x: s.x, z: s.z, r: 0.8, active: true };

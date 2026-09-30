@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLSL_COMMON, GLSL_AURORA, GLSL_GLINT, lightUniforms } from './shaders.js';
+import { softTex, groundHeight } from './world.js';
 
 // ---------------------------------------------------------------------------
 // Is og åbent vand med spejlet nordlys og stjerner
@@ -15,49 +17,18 @@ void main() {
 }`;
 
 const ICE_FRAG = /* glsl */ `
-uniform float uTime;
-uniform float uATime;
+uniform float uTime, uATime, uAurora, uPx;
 uniform float uNight;
-uniform float uAurora;
 uniform float uStorm;
 uniform vec3 uCam;
 uniform vec3 uSky;
 uniform vec4 uShoot;
+uniform vec3 uLightDir, uLightCol, uEye;
 varying vec3 vWorld;
 #include <fog_pars_fragment>
-
-float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-float noise(vec2 p) {
-    vec2 i = floor(p), f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-float fbm(vec2 p) {
-    float s = 0.0, a = 0.5;
-    for (int i = 0; i < 4; i++) { s += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }
-    return s;
-}
-
-vec3 aurora(vec2 p) {
-    vec3 col = vec3(0.0);
-    float t = uATime;
-    for (int i = 0; i < 3; i++) {
-        float fi = float(i);
-        float off = sin(p.x * 0.045 + t * 0.09 + fi * 2.1) * 6.0 + (fbm(vec2(p.x * 0.03 + t * 0.04, fi * 3.7)) - 0.5) * 22.0;
-        float y = p.y - off - fi * 13.0;
-        y = mod(y + 20.0, 40.0) - 20.0;
-        float w = 2.2 + fi * 0.9;
-        float core = exp(-y * y / (w * w));
-        float up = y - w * 1.5;
-        float fringe = exp(-up * up / (w * w * 3.0));
-        float rays = 0.35 + 0.65 * noise(vec2(p.x * 0.7 + t * 0.6 + fi * 10.0, fi + t * 0.05));
-        rays *= 0.55 + 0.45 * noise(vec2(p.x * 2.3 - t * 1.1, fi * 5.0));
-        float fade = 0.6 + 0.4 * sin(p.x * 0.02 + t * 0.13 + fi);
-        col += vec3(0.12, 1.0, 0.55) * core * rays * fade;
-        col += vec3(0.62, 0.2, 0.9) * fringe * rays * rays * fade * 0.32;
-    }
-    return col;
-}
+${GLSL_COMMON}
+${GLSL_AURORA}
+${GLSL_GLINT}
 
 void main() {
     vec2 wp = vWorld.xz;
@@ -73,7 +44,7 @@ void main() {
     dist *= mix(1.2, 4.0, water);
     dist += water * vec2(sin(wp.y * 0.8 + uTime * 1.2), sin(wp.x * 0.7 - uTime)) * 0.5;
 
-    vec3 aur = aurora(q * 0.85 + cq * 0.2 + dist) * uAurora;
+    vec3 aur = uAurora > 0.01 ? aurora(q * 0.85 + cq * 0.2 + dist, uATime) * uAurora : vec3(0.0);
 
     // Stjerner (længere væk -> mindre parallakse)
     vec2 sp = q * 0.9 + cq * 0.05 + dist * 0.25;
@@ -86,7 +57,6 @@ void main() {
         vec2 o = vec2(hash(id + 3.1), hash(id + 7.7)) - 0.5;
         star = smoothstep(0.09, 0.0, length(f - o * 0.6)) * (0.55 + 0.45 * sin(uTime * (1.5 + hs * 4.0) + hs * 80.0));
     }
-    // Stjerneskud
     float shoot = 0.0;
     if (uShoot.w > 0.0 && uShoot.w < 1.0) {
         vec2 dir = vec2(cos(uShoot.z), sin(uShoot.z));
@@ -102,13 +72,21 @@ void main() {
     vec3 sky = uSky * vec3(0.8, 0.9, 1.0) * (1.0 - uNight) * 0.3 + vec3(0.01, 0.02, 0.05) * uNight;
     vec3 refl = sky + aur + vec3(star + shoot) * uNight * (1.0 - uStorm);
 
+    // Isens krop: overflade-revner + et dybere lag med bobler og revner (parallakse)
     float n1 = fbm(wp * 0.3);
     float c1 = 1.0 - smoothstep(0.0, 0.035, abs(noise(wp * 0.22) - 0.5));
     float c2 = 1.0 - smoothstep(0.0, 0.03, abs(noise(wp * 0.8 + 3.1) - 0.5));
     float cracks = max(c1 * 0.9, c2 * 0.45);
+    vec2 dp = wp + vec2(0.35);
+    float dc = 1.0 - smoothstep(0.0, 0.06, abs(noise(dp * 0.5 + 9.0) - 0.5));
+    vec2 bg = dp * 5.0;
+    vec3 bh = hash32(floor(bg));
+    float bub = step(0.93, bh.x) * smoothstep(0.35, 0.05, length(fract(bg) - 0.3 - bh.yz * 0.4));
     vec3 iceDay = mix(vec3(0.3, 0.5, 0.66), vec3(0.5, 0.7, 0.84), n1);
     vec3 iceNight = vec3(0.035, 0.065, 0.12) + n1 * 0.04;
     vec3 base = mix(iceDay, iceNight, uNight);
+    base *= 1.0 - dc * 0.18;
+    base += mix(vec3(0.25, 0.35, 0.42), vec3(0.05, 0.08, 0.12), uNight) * bub * 0.5;
     float refk = 0.85 - cracks * 0.5;
     vec3 col = base * (1.0 - 0.35 * refk * uNight) + refl * refk;
     col += mix(vec3(0.3), vec3(0.08, 0.11, 0.15), uNight) * cracks;
@@ -117,8 +95,14 @@ void main() {
     vec3 frostCol = mix(vec3(0.86, 0.92, 0.98), vec3(0.16, 0.22, 0.34), uNight);
     col = mix(col, frostCol, frost * 0.55 * (1.0 - water));
 
-    float sh = hash(floor(wp * 7.0));
-    col += step(0.992, sh) * pow(max(0.0, sin(uTime * 2.5 + sh * 90.0 + dot(uCam.xz, vec2(0.8, 1.1)))), 10.0) * 0.9 * (1.0 - water);
+    // Sol-/måneskær og glimt
+    vec3 lc = pow(uLightCol, vec3(1.0 / 2.2));
+    vec3 N = normalize(vec3(dist.x * 0.12, 1.0, dist.y * 0.12));
+    vec3 V = normalize(uEye - vWorld);
+    vec3 L = normalize(uLightDir);
+    float spec = pow(max(dot(reflect(-L, N), V), 0.0), 70.0);
+    col += lc * spec * mix(0.55, 0.35, uNight) * (1.0 - frost * 0.7) * (1.0 - uStorm);
+    col += lc * glint(vWorld, vec3(0.0, 1.0, 0.0), L, V, 0.7) * (1.0 - water) * (0.4 + frost) * 1.6 * (1.0 - uStorm);
 
     vec3 wcol = mix(vec3(0.05, 0.18, 0.27), vec3(0.006, 0.014, 0.03), uNight);
     col = mix(col, wcol + refl * 0.95, water);
@@ -130,16 +114,14 @@ void main() {
 }`;
 
 export function createIceMaterial() {
-    const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-        uTime: { value: 0 },
-        uATime: { value: 0 },
+    const own = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
         uNight: { value: 0 },
-        uAurora: { value: 0 },
         uStorm: { value: 0 },
         uCam: { value: new THREE.Vector3() },
         uSky: { value: new THREE.Color() },
         uShoot: { value: new THREE.Vector4(0, 0, 0, -1) },
     }]);
+    const uniforms = { ...own, ...lightUniforms };
     return new THREE.ShaderMaterial({ uniforms, vertexShader: ICE_VERT, fragmentShader: ICE_FRAG, fog: true });
 }
 
@@ -147,9 +129,9 @@ export function createIceMaterial() {
 // Snefald / snestorm / diamantstøv
 // ---------------------------------------------------------------------------
 export class Snow {
-    constructor(count) {
+    constructor(count, opts = {}) {
         this.count = count;
-        this.box = new THREE.Vector3(70, 36, 70);
+        this.box = new THREE.Vector3(...(opts.box || [70, 36, 70]));
         const pos = new Float32Array(count * 3);
         const rnd = new Float32Array(count);
         for (let i = 0; i < count; i++) {
@@ -192,7 +174,8 @@ export class Snow {
                 varying float vTw;
                 void main() {
                     float d = length(gl_PointCoord - 0.5);
-                    float a = smoothstep(0.5, 0.15, d);
+                    float a = smoothstep(0.5, ${opts.soft ? '0.0' : '0.15'}, d);
+                    a *= a;
                     float tw = mix(1.0, pow(vTw, 6.0) * 2.2, uSparkle);
                     gl_FragColor = vec4(uColor, a * uOpacity * tw);
                 }`,
@@ -383,72 +366,151 @@ export class Footprints {
 }
 
 // ---------------------------------------------------------------------------
-// Efterbehandling: lav opløsning, glød, kornet film, vignet, farvegradering
+// Lav tåge, der lægger sig i lavninger (vandrette, bløde lag)
 // ---------------------------------------------------------------------------
+export class Mist {
+    constructor(count = 22) {
+        this.group = new THREE.Group();
+        this.items = [];
+        this.mat = [];
+        for (let i = 0; i < count; i++) {
+            const m = new THREE.MeshBasicMaterial({
+                map: softTex, color: '#dfe8f2', transparent: true, opacity: 0, depthWrite: false, fog: true,
+            });
+            const size = 9 + Math.random() * 9;
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size * 0.7).rotateX(-Math.PI / 2), m);
+            mesh.rotation.y = Math.random() * Math.PI;
+            mesh.renderOrder = 4;
+            this.group.add(mesh);
+            this.items.push({
+                mesh, x: (Math.random() - 0.5) * 60, z: (Math.random() - 0.5) * 60,
+                h: 0.35 + Math.random() * 0.8, a: 0.4 + Math.random() * 0.6, ph: Math.random() * 6, y: 0,
+            });
+            this.mat.push(m);
+        }
+    }
+
+    update(dt, center, wind, opacity, color, time) {
+        for (const it of this.items) {
+            it.x += (wind.x * 0.25 + Math.sin(time * 0.1 + it.ph) * 0.3) * dt;
+            it.z += (wind.z * 0.25 + Math.cos(time * 0.08 + it.ph) * 0.3) * dt;
+            let dx = it.x - center.x, dz = it.z - center.z;
+            if (dx < -32) it.x += 64; else if (dx > 32) it.x -= 64;
+            if (dz < -32) it.z += 64; else if (dz > 32) it.z -= 64;
+            const gy = Math.max(0, groundHeight(it.x, it.z)) + it.h;
+            it.y += (gy - it.y) * Math.min(1, dt * 2);
+            it.mesh.position.set(it.x, it.y, it.z);
+            it.mesh.material.opacity = opacity * it.a * (0.7 + 0.3 * Math.sin(time * 0.3 + it.ph));
+            it.mesh.material.color.copy(color);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Efterbehandling: lav opløsning, blød glød, tilt-shift-dybde, stormstriber,
+// farvegradering, vignet og filmkorn
+// ---------------------------------------------------------------------------
+const FS_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+
+function fsMat(fragmentShader, uniforms) {
+    return new THREE.ShaderMaterial({ uniforms, vertexShader: FS_VERT, fragmentShader, depthTest: false, depthWrite: false });
+}
+
 export class PostFX {
     constructor(renderer) {
         this.renderer = renderer;
         this.enabled = true;
-        this.rt = new THREE.WebGLRenderTarget(4, 4, { samples: 4 });
+        const rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
+        this.rt = new THREE.WebGLRenderTarget(4, 4, { samples: 4, ...rtOpts });
         this.rt.texture.colorSpace = THREE.SRGBColorSpace;
-        this.rt.texture.minFilter = THREE.LinearFilter;
-        this.rt.texture.magFilter = THREE.LinearFilter;
+        this.rtA = new THREE.WebGLRenderTarget(4, 4, rtOpts);
+        this.rtB = new THREE.WebGLRenderTarget(4, 4, rtOpts);
+        this.rtA.texture.colorSpace = this.rtB.texture.colorSpace = THREE.SRGBColorSpace;
+
+        this.down = fsMat(/* glsl */ `
+            uniform sampler2D tDiffuse; uniform vec2 uTexel; varying vec2 vUv;
+            void main() {
+                vec3 c = texture2D(tDiffuse, vUv + uTexel * vec2(-1.0, -1.0)).rgb
+                       + texture2D(tDiffuse, vUv + uTexel * vec2(1.0, -1.0)).rgb
+                       + texture2D(tDiffuse, vUv + uTexel * vec2(-1.0, 1.0)).rgb
+                       + texture2D(tDiffuse, vUv + uTexel * vec2(1.0, 1.0)).rgb;
+                gl_FragColor = vec4(c * 0.25, 1.0);
+            }`, { tDiffuse: { value: null }, uTexel: { value: new THREE.Vector2() } });
+        this.blur = fsMat(/* glsl */ `
+            uniform sampler2D tDiffuse; uniform vec2 uDir; varying vec2 vUv;
+            void main() {
+                vec3 c = texture2D(tDiffuse, vUv).rgb * 0.227;
+                c += texture2D(tDiffuse, vUv + uDir * 1.385).rgb * 0.316;
+                c += texture2D(tDiffuse, vUv - uDir * 1.385).rgb * 0.316;
+                c += texture2D(tDiffuse, vUv + uDir * 3.231).rgb * 0.070;
+                c += texture2D(tDiffuse, vUv - uDir * 3.231).rgb * 0.070;
+                gl_FragColor = vec4(c, 1.0);
+            }`, { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() } });
+
         this.uniforms = {
             tDiffuse: { value: this.rt.texture },
+            tBlur: { value: this.rtA.texture },
             uRes: { value: new THREE.Vector2(4, 4) },
             uTime: { value: 0 },
             uNight: { value: 0 },
             uStorm: { value: 0 },
+            uTilt: { value: 0.85 },
+            uWind: { value: new THREE.Vector2(1, 0) },
+            uFade: { value: 0 },
+            uWarm: { value: 0 },
         };
-        this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
-            uniforms: this.uniforms,
-            depthTest: false,
-            depthWrite: false,
-            vertexShader: /* glsl */ `
-                varying vec2 vUv;
-                void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
-            fragmentShader: /* glsl */ `
-                uniform sampler2D tDiffuse;
-                uniform vec2 uRes;
-                uniform float uTime, uNight, uStorm;
-                varying vec2 vUv;
-                float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
-                vec3 lum3(vec3 c) { return vec3(dot(c, vec3(0.299, 0.587, 0.114))); }
-                void main() {
-                    vec2 uv = vUv;
-                    vec2 px = 1.0 / uRes;
-                    vec2 cd = uv - 0.5;
-                    float ca = dot(cd, cd) * 2.2;
-                    vec3 c;
-                    c.r = texture2D(tDiffuse, uv + cd * px * 6.0 * ca).r;
-                    c.g = texture2D(tDiffuse, uv).g;
-                    c.b = texture2D(tDiffuse, uv - cd * px * 6.0 * ca).b;
-                    // Billig glød
-                    vec3 b = vec3(0.0);
-                    for (int i = 0; i < 8; i++) {
-                        float a = float(i) * 0.785398;
-                        vec2 o = vec2(cos(a), sin(a));
-                        b += max(texture2D(tDiffuse, uv + o * px * 3.5).rgb - 0.55, 0.0);
-                        b += max(texture2D(tDiffuse, uv + o * px * 9.0).rgb - 0.55, 0.0) * 0.6;
-                    }
-                    c += b * 0.16;
-                    vec3 g = pow(max(c, 0.0), vec3(1.0 / 2.2));
-                    // Farvegradering: kølige skygger, varme højlys, let afmættet
-                    float l = dot(g, vec3(0.299, 0.587, 0.114));
-                    g = mix(lum3(g), g, 0.88);
-                    g += vec3(-0.02, 0.01, 0.05) * (1.0 - l) + vec3(0.03, 0.01, -0.02) * l;
-                    g = mix(g, g * g * (3.0 - 2.0 * g), 0.3);
-                    g = mix(g, g + vec3(0.03, 0.04, 0.06), uStorm * 0.5);
-                    // Vignet
-                    float v = smoothstep(0.95, 0.3, length(cd * vec2(1.1, 1.0)));
-                    g *= mix(0.62, 1.0, v);
-                    // Filmkorn + svage scanlines
-                    float n = hash(floor(uv * uRes) + fract(uTime * 7.3) * 91.7) - 0.5;
-                    g += n * mix(0.045, 0.07, uNight);
-                    g *= 0.975 + 0.025 * sin(uv.y * uRes.y * 3.14159);
-                    gl_FragColor = vec4(g, 1.0);
-                }`,
-        }));
+        this.comp = fsMat(/* glsl */ `
+            uniform sampler2D tDiffuse, tBlur;
+            uniform vec2 uRes, uWind;
+            uniform float uTime, uNight, uStorm, uTilt, uFade, uWarm;
+            varying vec2 vUv;
+            ${GLSL_COMMON}
+            void main() {
+                vec2 uv = vUv;
+                vec2 px = 1.0 / uRes;
+                vec2 cd = uv - 0.5;
+                float ca = dot(cd, cd) * 2.2;
+                vec3 c;
+                c.r = texture2D(tDiffuse, uv + cd * px * 6.0 * ca).r;
+                c.g = texture2D(tDiffuse, uv).g;
+                c.b = texture2D(tDiffuse, uv - cd * px * 6.0 * ca).b;
+                vec3 bl = texture2D(tBlur, uv).rgb;
+                // Tilt-shift: skarp i midten, blød mod top og bund
+                float tilt = smoothstep(0.16, 0.5, abs(uv.y - 0.5)) * uTilt;
+                c = mix(c, bl, tilt);
+                // Glød / halation
+                c += max(bl - 0.8, 0.0) * 1.5 + bl * 0.035;
+                // Stormstriber i vindens retning
+                if (uStorm > 0.01) {
+                    vec2 sd = normalize(uWind + vec2(1e-4));
+                    vec2 a = cd * vec2(uRes.x / uRes.y, 1.0);
+                    vec2 su = vec2(dot(a, sd), dot(a, vec2(-sd.y, sd.x)));
+                    float s1 = noise(vec2(su.x * 14.0 - uTime * 26.0, su.y * 170.0));
+                    float s2 = noise(vec2(su.x * 9.0 - uTime * 17.0, su.y * 90.0 + 13.0));
+                    float streak = smoothstep(0.86, 0.99, s1) * 0.6 + smoothstep(0.88, 0.99, s2) * 0.4;
+                    c += vec3(0.85, 0.9, 1.0) * streak * uStorm * mix(0.14, 0.06, uNight);
+                }
+                vec3 g = pow(max(c, 0.0), vec3(1.0 / 2.2));
+                // Gradering: kølige skygger, varme højlys, let filmisk S-kurve
+                float l = dot(g, vec3(0.299, 0.587, 0.114));
+                g = mix(vec3(l), g, 0.9);
+                g += vec3(-0.02, 0.005, 0.045) * (1.0 - l) + vec3(0.035, 0.012, -0.02) * l;
+                g = mix(g, g * g * (3.0 - 2.0 * g), 0.28);
+                g += vec3(0.05, 0.02, -0.02) * uWarm;
+                g = mix(g, g + vec3(0.03, 0.04, 0.06), uStorm * 0.4);
+                float v = smoothstep(0.95, 0.28, length(cd * vec2(1.1, 1.0)));
+                g *= mix(0.6, 1.0, v);
+                float n = hash(floor(uv * uRes) + fract(uTime * 7.3) * 91.7) - 0.5;
+                g += n * mix(0.04, 0.065, uNight);
+                g *= 0.978 + 0.022 * sin(uv.y * uRes.y * 3.14159);
+                g *= 1.0 - uFade;
+                gl_FragColor = vec4(g, 1.0);
+            }`, this.uniforms);
+
+        this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.comp);
+        this.quad.frustumCulled = false;
         this.scene = new THREE.Scene();
         this.scene.add(this.quad);
         this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -456,23 +518,45 @@ export class PostFX {
 
     /** Returnerer den interne opløsning (højde i pixels). */
     setSize(w, h) {
-        const budget = 720 * 540;
+        const budget = 760 * 560;
         const k = Math.min(this.renderer.getPixelRatio(), Math.sqrt(budget / (w * h)));
         const iw = Math.max(2, Math.round(w * k)), ih = Math.max(2, Math.round(h * k));
         this.rt.setSize(iw, ih);
+        const qw = Math.max(2, Math.round(iw / 4)), qh = Math.max(2, Math.round(ih / 4));
+        this.rtA.setSize(qw, qh);
+        this.rtB.setSize(qw, qh);
         this.uniforms.uRes.value.set(iw, ih);
+        this.iw = iw; this.ih = ih; this.qw = qw; this.qh = qh;
         return ih;
     }
 
+    pass(mat, target) {
+        this.quad.material = mat;
+        this.renderer.setRenderTarget(target);
+        this.renderer.render(this.scene, this.cam);
+    }
+
     render(scene, camera) {
+        const r = this.renderer;
         if (!this.enabled) {
-            this.renderer.setRenderTarget(null);
-            this.renderer.render(scene, camera);
+            r.setRenderTarget(null);
+            r.render(scene, camera);
             return;
         }
-        this.renderer.setRenderTarget(this.rt);
-        this.renderer.render(scene, camera);
-        this.renderer.setRenderTarget(null);
-        this.renderer.render(this.scene, this.cam);
+        r.setRenderTarget(this.rt);
+        r.render(scene, camera);
+        this.down.uniforms.tDiffuse.value = this.rt.texture;
+        this.down.uniforms.uTexel.value.set(1 / this.iw, 1 / this.ih);
+        this.pass(this.down, this.rtA);
+        const b = this.blur.uniforms;
+        for (const step of [1, 2]) {
+            b.tDiffuse.value = this.rtA.texture;
+            b.uDir.value.set(step / this.qw, 0);
+            this.pass(this.blur, this.rtB);
+            b.tDiffuse.value = this.rtB.texture;
+            b.uDir.value.set(0, step / this.qh);
+            this.pass(this.blur, this.rtA);
+        }
+        this.pass(this.comp, null);
     }
 }

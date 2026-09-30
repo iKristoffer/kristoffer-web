@@ -13,6 +13,9 @@ Lokalt: `python3 -m http.server` i mappen og åbn http://localhost:8000 (ES-modu
 
 - `src/main.js` – spillogik, input, HUD, vejr, døgn
 - `src/world.js` – terræn, støj, modeller, udlægning af verden
-- `src/dog.js` – Sikus AI
-- `src/fx.js` – is/nordlys-shader, sne, partikler, fodspor, retro-efterbehandling
+- `src/player.js` – Arnarulunnguaqs model med led og procedurel animation
+- `src/dog.js` – Sikus AI og hundeanimation
+- `src/scatter.js` – græstotter, småsten, snedriver og isskruninger (instansieret)
+- `src/shaders.js` – sne-materiale (riller, glimt, blå skygger), nordlys-GLSL, flammer
+- `src/fx.js` – is-shader, sne, tåge, partikler, fodspor, efterbehandling (glød, tilt-shift, korn)
 - `src/audio.js` – procedurel lyd (WebAudio)
