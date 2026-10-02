@@ -537,6 +537,31 @@ export function makeFire() {
     return { group: g, flames, glow, halo };
 }
 
+/** Fakkel: en stav med en tjæret brand i toppen. Lyser i mørket, men brænder ud (se heaters i main.js). */
+export function makeTorch() {
+    const g = new THREE.Group();
+    const pole = mk(new THREE.CylinderGeometry(0.04, 0.06, 1.7, 6), '#6b4c2e', 0, 0.85, 0);
+    pole.rotation.z = 0.05;
+    const head = mk(new THREE.CylinderGeometry(0.1, 0.065, 0.24, 7), '#3a2515', 0, 1.7, 0);
+    const wrap = mk(new THREE.TorusGeometry(0.075, 0.018, 5, 10), '#b89a68', 0, 1.62, 0);
+    wrap.rotation.x = Math.PI / 2;
+    const flames = new THREE.Group();
+    flames.add(makeFlame(0.42, 0.72, 0.0, 0.4), makeFlame(0.3, 0.52, 4.7, 0.4));
+    flames.children[1].position.x = 0.03;
+    flames.position.y = 1.76;
+    const halo = makeGlow('#ffb45a', 2.4, 0.55);
+    halo.position.y = 0.3;
+    flames.add(halo);
+    const glow = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 6).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ map: softTex, color: '#ff8a30', transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    glow.position.y = 0.06;
+    g.add(pole, head, wrap, flames, glow);
+    contactShadow(g, 0.9, 0.9, 0.3);
+    return { group: g, flames, glow, halo, head };
+}
+
 export function makeQulliq() {
     const g = new THREE.Group();
     g.add(mk(new THREE.CylinderGeometry(0.3, 0.35, 0.25, 7), '#6b6f78', 0, 0.12, 0));

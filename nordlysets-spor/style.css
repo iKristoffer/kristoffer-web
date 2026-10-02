@@ -176,7 +176,7 @@ button { font-family: inherit; color: inherit; }
 @keyframes fadeIn { from { opacity: 0; } }
 .panel {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 520px);
-    max-height: 82vh; overflow: auto; background: linear-gradient(180deg, rgba(14,28,50,.96), rgba(8,17,32,.96));
+    max-height: 82vh; overflow: hidden; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(14,28,50,.96), rgba(8,17,32,.96));
     border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px 16px;
     box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); touch-action: pan-y;
     animation: panelIn .32s cubic-bezier(.2,.9,.3,1.15) both;
@@ -285,3 +285,273 @@ svg { display: block; fill: currentColor; }
 #btn-sound.muted .mute { display: inline; }
 #btn-fx.off { opacity: .5; }
 .primary:disabled { opacity: .5; cursor: progress; }
+
+/* ---------- Holdbarhed ---------- */
+.gearrow { align-items: center; }
+.gearrow .nm { flex: 1; }
+.gearrow small { display: block; color: var(--ink-dim); font-size: 11px; }
+.gearrow.broken .nm { color: #ff9a8a; }
+.gearrow .dur { height: 5px; margin: 3px 0 2px; border-radius: 4px; background: rgba(4,10,20,.55); overflow: hidden; max-width: 140px; }
+.gearrow .dur i { display: block; height: 100%; background: linear-gradient(90deg, #c9a24a, #e8d79a); }
+.gearrow.broken .dur i { background: #a92d24; }
+.gearrow .rcost { margin-left: 6px; white-space: nowrap; }
+
+/* ---------- Samtale ---------- */
+#t-role { font-style: italic; color: var(--ink-dim); margin: -6px 0 10px; font-size: 13px; }
+#t-text p { font-family: var(--serif); font-size: 19px; line-height: 1.38; margin: 0 0 9px; }
+#t-opts { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.talkopt { text-align: left; padding: 10px 14px; border-radius: 12px; }
+.recipe.locked { opacity: .6; }
+.recipe.locked .nm { font-style: italic; }
+
+/* Overskrift og luk-knap står fast; kun indholdet ruller */
+.panel > .phead { flex: none; }
+#recipes, #inv-list, #t-text { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#t-opts, #t-role { flex: none; }
+#recipes, #inv-list { padding-right: 4px; }
+
+.recipe .stats { font-size: 11.5px; color: #a8d6b8; margin: 2px 0; }
+
+/* ---------- Kort ---------- */
+#map-cv { flex: none; width: 100%; max-width: min(78vh, 100%); aspect-ratio: 1; margin: 0 auto; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.45); touch-action: none; }
+#map-key { flex: none; text-align: center; font-size: 12.5px; color: var(--ink-dim); margin-top: 8px; }
+#j-text { white-space: pre-line; }
+
+/* ---------- Rygsæk (læder, sting og felter) ---------- */
+#btn-inv.bump { animation: bump .45s ease-out; }
+#panel-inv {
+    background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.018) 0 2px, transparent 2px 5px),
+        linear-gradient(180deg, #4a3322 0%, #35241a 60%, #2a1c14 100%);
+    border: 2px solid #6b4a30;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 5px #35241a, inset 0 0 0 6px rgba(214,170,110,.35), inset 0 2px 20px rgba(0,0,0,.5);
+}
+#panel-inv .phead h2 { color: #f1dcb4; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+#inv-list { padding: 2px 4px 4px; }
+.bag-sec { font-family: var(--serif); font-size: 15px; letter-spacing: 1.4px; text-transform: uppercase; color: #d9b57f; margin: 14px 0 7px; display: flex; align-items: center; gap: 10px; }
+.bag-sec::after { content: ""; flex: 1; height: 0; border-top: 2px dashed rgba(214,170,110,.4); }
+.bag-sheet { background: rgba(0,0,0,.22); border: 1px solid rgba(214,170,110,.3); border-radius: 12px; padding: 10px 12px; }
+.bag-sheet .who { display: flex; align-items: center; gap: 10px; }
+.bag-sheet .face { font-size: 30px; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(#6b4a30, #3a281b); border: 2px solid #d9b57f; }
+.bag-sheet .nm { font-family: var(--serif); font-size: 20px; color: #f6e8c9; }
+.bag-sheet .sub { font-size: 12px; color: #c9ad82; }
+.bag-sheet .vits { display: flex; gap: 8px; margin: 10px 0 8px; }
+.vit { flex: 1; text-align: center; background: rgba(255,255,255,.06); border-radius: 10px; padding: 6px 2px; }
+.vit span { font-size: 16px; } .vit b { display: block; font-size: 19px; color: #fff4d8; } .vit small { font-size: 10.5px; color: #c9ad82; }
+.bag-sheet .derived { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: #e4cfa6; }
+.bag-sheet .derived b { color: #ffe9a8; }
+.bag-quest { margin-top: 9px; font-size: 13px; padding: 8px 11px; border-left: 3px solid #ffd36b; background: rgba(255,211,107,.1); border-radius: 0 8px 8px 0; color: #f3e4c0; }
+.bag-empty { font-size: 13px; color: #b99a70; font-style: italic; padding: 4px 2px; }
+.gear-tile { display: flex; align-items: center; gap: 11px; padding: 9px 10px; margin-bottom: 7px; border-radius: 12px; background: rgba(0,0,0,.2); border: 1px solid rgba(214,170,110,.22); }
+.gear-tile.broken { border-color: #b3443a; background: rgba(120,30,25,.22); }
+.gear-tile .gic { position: relative; font-size: 28px; width: 46px; height: 46px; display: grid; place-items: center; background: radial-gradient(#5a3f2a, #2f2016); border-radius: 10px; border: 1px solid rgba(214,170,110,.45); flex: none; }
+.gear-tile .tier { position: absolute; bottom: 1px; font-style: normal; font-size: 7px; letter-spacing: 1px; color: #ffd36b; }
+.gear-tile .gtx { flex: 1; min-width: 0; }
+.gear-tile .gnm { font-size: 14.5px; color: #fff1cf; font-weight: 700; }
+.gear-tile .gst { font-size: 11.5px; color: #a8d6b8; margin: 1px 0 3px; }
+.gear-tile .dur { height: 5px; border-radius: 4px; background: rgba(0,0,0,.5); overflow: hidden; }
+.gear-tile .dur i { display: block; height: 100%; background: linear-gradient(90deg, #c9a24a, #ecdba0); }
+.gear-tile.broken .dur i { background: #a92d24; }
+.gear-tile .gdu { font-size: 11px; color: #c9ad82; margin-top: 2px; }
+.gear-tile.broken .gdu { color: #ff9a8a; }
+.gear-tile .btn small { display: block; font-size: 10.5px; opacity: .85; }
+.bag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.bag-grid .cell { position: relative; text-align: center; padding: 10px 4px 8px; border-radius: 12px; background: radial-gradient(rgba(255,255,255,.08), rgba(0,0,0,.18)); border: 1px solid rgba(214,170,110,.3); }
+.bag-grid .cell.empty { opacity: .38; }
+.bag-grid .ic { font-size: 28px; line-height: 1.15; }
+.bag-grid .cnt { position: absolute; top: 4px; right: 6px; min-width: 20px; padding: 0 5px; border-radius: 10px; background: #1e140d; border: 1px solid rgba(214,170,110,.5); font-size: 12px; font-weight: 700; color: #ffe9a8; }
+.bag-grid .nm { font-size: 11.5px; color: #e4cfa6; margin-top: 2px; }
+.bag-grid .acts { display: flex; gap: 4px; justify-content: center; margin-top: 6px; }
+.bag-grid .acts button { background: rgba(255,211,107,.18); border: 1px solid rgba(255,211,107,.5); border-radius: 8px; padding: 2px 8px; font-size: 11.5px; cursor: pointer; }
+.bag-grid .acts button:hover { background: rgba(255,211,107,.35); }
+.bag-dog { margin-top: 12px; font-size: 12.5px; color: #d9c298; text-align: center; }
+
+/* =====================================================================
+   Tema: skind, ben, perler og stikninger — og nordlys som eneste kolde farve
+   ===================================================================== */
+:root {
+    --bone: #eadfc6; --bone-dim: #b9a98a; --sealskin: #3a281b; --bead-red: #c9402a; --bead-blue: #2c86b0; --bead-gold: #d99a2b;
+}
+/* Perlebort øverst på alle paneler */
+.panel { padding-top: 22px; }
+.panel::before {
+    content: ""; position: absolute; left: 20px; right: 20px; top: 8px; height: 7px; pointer-events: none; opacity: .9;
+    background:
+        radial-gradient(circle at 4px 3.5px, var(--bead-red) 2.4px, transparent 2.9px) 0 0 / 28px 7px repeat-x,
+        radial-gradient(circle at 4px 3.5px, var(--bone) 2.4px, transparent 2.9px) 7px 0 / 28px 7px repeat-x,
+        radial-gradient(circle at 4px 3.5px, var(--bead-blue) 2.4px, transparent 2.9px) 14px 0 / 28px 7px repeat-x,
+        radial-gradient(circle at 4px 3.5px, var(--bone) 2.4px, transparent 2.9px) 21px 0 / 28px 7px repeat-x;
+}
+/* Stikkede knapper */
+.btn {
+    position: relative; color: #fff2d0; background: linear-gradient(180deg, rgba(217,154,43,.32), rgba(150,90,30,.28));
+    border: 1px solid rgba(240,200,120,.65); box-shadow: inset 0 0 0 2px rgba(0,0,0,.18), 0 2px 0 rgba(0,0,0,.35);
+}
+.btn::after { content: ""; position: absolute; inset: 3px; border-radius: 7px; border: 1px dashed rgba(255,235,190,.35); pointer-events: none; }
+.btn:hover:not(:disabled) { background: linear-gradient(180deg, rgba(240,175,60,.5), rgba(170,100,30,.4)); }
+.btn:disabled { filter: saturate(.4); }
+/* Runde knapper: sælskind med syning */
+.round {
+    background: radial-gradient(circle at 35% 28%, rgba(120,84,56,.88), rgba(52,34,23,.92)); border: 2px solid rgba(233,223,198,.55);
+    box-shadow: 0 6px 18px rgba(0,0,0,.4), inset 0 0 0 3px rgba(30,20,13,.55);
+}
+.round::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; border: 1px dashed rgba(233,223,198,.4); pointer-events: none; }
+.round.big::before { inset: 7px; }
+.round:active, .round.pressed { background: radial-gradient(circle at 35% 28%, rgba(150,106,70,.92), rgba(70,46,31,.95)); }
+.round.big { border-color: rgba(255,211,107,.85); }
+.round small { color: var(--bone); }
+/* Livsbjælker i udskåret ben */
+.bar { box-shadow: inset 0 0 0 1px rgba(4,8,14,.7), 0 0 0 2px rgba(234,223,198,.55), 0 2px 6px rgba(0,0,0,.4); }
+.stat .ico { filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)) sepia(.15); }
+#objective { background: linear-gradient(90deg, rgba(58,40,27,.78), rgba(58,40,27,.45)); border-left: 3px solid var(--bead-gold); border-radius: 4px 10px 10px 4px; }
+/* Byg og sy: værksted */
+#panel-craft {
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 3px, transparent 3px 7px), linear-gradient(180deg, #2c3a3b, #1a2527 70%, #121b1d);
+    border: 2px solid #6d806f; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 5px #1a2527, inset 0 0 0 6px rgba(190,215,190,.25);
+}
+#panel-craft .phead h2 { color: var(--bone); }
+#panel-craft .recipe { background: rgba(234,223,198,.06); border: 1px dashed rgba(234,223,198,.22); }
+#panel-craft .recipe.ready { border-color: rgba(125,255,192,.6); box-shadow: 0 0 14px rgba(125,255,192,.15); background: rgba(125,255,192,.07); }
+#panel-craft .recipe.locked { border-style: dotted; background: rgba(0,0,0,.2); }
+#panel-craft .recipe .nm { color: #fff4d8; font-weight: 700; }
+/* Samtale og dagbog: pergament af skind med blæk */
+#panel-talk, #panel-journal {
+    background: radial-gradient(ellipse at 30% 0%, rgba(255,250,235,.55), transparent 60%), linear-gradient(180deg, #e9dbb9, #d4bf92);
+    border: 2px solid #8a6a3f; color: #3a2a18;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 5px #e0cfa6, inset 0 0 0 6px rgba(120,84,44,.5), inset 0 0 40px rgba(110,74,30,.35);
+}
+#panel-talk .phead h2, #panel-journal .phead h2 { color: #3a2412; display: flex; align-items: center; gap: 10px; }
+#panel-talk .close { color: #3a2412; }
+#t-name .face { width: 40px; height: 40px; display: inline-grid; place-items: center; font-size: 24px; border-radius: 50%; background: radial-gradient(#b98a5c, #6d4a2c); border: 2px solid #3a2412; box-shadow: inset 0 0 6px rgba(0,0,0,.4); }
+#t-role { color: #6b5232; }
+#t-text p, #j-text { color: #2f2012; }
+#t-text p::first-letter { font-size: 1.35em; color: #7a3b1e; }
+.talkopt { background: linear-gradient(180deg, #5a3d28, #3d281a); color: #f6e7c4; border: 1px solid #2a1a0f; }
+.talkopt::after { border-color: rgba(246,231,196,.3); }
+.talkopt:disabled { opacity: .45; }
+#panel-journal .primary { }
+#panel-map { background: linear-gradient(180deg, #4a3322, #2a1c14); border: 2px solid #6b4a30; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 5px #35241a, inset 0 0 0 6px rgba(214,170,110,.35); }
+#panel-map .phead h2 { color: #f1dcb4; }
+#map-key { color: #d9c298; }
+
+/* ---------- Hundestyring ---------- */
+#ctrl-badge { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 64px); transform: translateX(-50%); padding: 6px 16px; border-radius: 20px;
+    background: rgba(58,40,27,.85); border: 2px solid var(--bead-gold); font-family: var(--serif); font-size: 18px; letter-spacing: .5px; display: none; pointer-events: none; z-index: 5; }
+body.dogmode #ctrl-badge { display: block; animation: fadeIn .4s ease-out both; }
+body.dogmode::after { content: ""; position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px rgba(255,200,90,.28); z-index: 3; }
+#btn-dog.on { background: radial-gradient(circle at 35% 28%, rgba(217,154,43,.85), rgba(120,70,20,.9)); border-color: #ffd36b; }
+
+/* =====================================================================
+   UI-overhaling 2: HUD, titelskærm, beskeder — håndlavet, ikke spil-standard
+   ===================================================================== */
+:root { --serif: "IM Fell DW Pica", "Cormorant Garamond", Georgia, serif; }
+.bead-strip, .orn { height: 7px; background:
+    radial-gradient(circle at 4px 3.5px, var(--bead-red) 2.4px, transparent 2.9px) 0 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 4px 3.5px, var(--bone) 2.4px, transparent 2.9px) 7px 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 4px 3.5px, var(--bead-blue) 2.4px, transparent 2.9px) 14px 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 4px 3.5px, var(--bone) 2.4px, transparent 2.9px) 21px 0 / 28px 7px repeat-x; }
+
+/* Livsbjælker: syede skindstrimler med benkant */
+.bar { height: 10px; width: 124px; background: #24170f; border-radius: 3px; box-shadow: 0 0 0 2px #cdbd9a, 0 0 0 3px #4a3322, 0 3px 6px rgba(0,0,0,.45); }
+.bar i, .bar b { border-radius: 2px; }
+.bar i::after { inset: 0; border-radius: 0; background: repeating-linear-gradient(90deg, transparent 0 5px, rgba(0,0,0,.18) 5px 6px); }
+.bar::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%; border-top: 1px dashed rgba(255,235,190,.35); pointer-events: none; }
+#st-health .bar i { background: linear-gradient(90deg, #8f2a22, #d95a48); }
+#st-warm .bar i { background: linear-gradient(90deg, #b25a1e, #f0b24a); }
+#st-food .bar i { background: linear-gradient(90deg, #55703a, #b4cf7a); }
+#st-dog .bar i { background: linear-gradient(90deg, #5d6f8c, #c9d6e8); }
+#st-dog .bar { width: 76px; }
+.stat { gap: 9px; }
+.stat .ico svg { fill: #f1e4c4; filter: drop-shadow(0 1px 1px rgba(0,0,0,.7)); }
+#st-health .ico svg { fill: #e87a68; } #st-warm .ico svg { fill: #f6b44e; } #st-food .ico svg { fill: #bcd88a; } #st-dog .ico svg { fill: #d5dfee; }
+#dog-mood { font-family: var(--serif); font-size: 12.5px; }
+
+/* Opgave: skindlap med syning */
+#objective {
+    position: relative; font-family: var(--serif); font-size: 14px; padding: 9px 13px 9px 14px; max-width: 290px;
+    background: linear-gradient(180deg, rgba(74,51,34,.92), rgba(48,32,22,.92)); border: 1px solid rgba(214,170,110,.5); border-left: 4px solid var(--bead-gold);
+    border-radius: 3px 12px 12px 3px; box-shadow: 0 6px 16px rgba(0,0,0,.4); color: #f6e8c9; line-height: 1.3;
+}
+#objective::before { content: "Opgave"; display: block; font-family: var(--sans); font-size: 9px; letter-spacing: 2.6px; text-transform: uppercase; color: #d9b57f; margin-bottom: 2px; }
+#objective::after { content: ""; position: absolute; inset: 3px; border-radius: 2px 9px 9px 2px; border: 1px dashed rgba(246,232,201,.2); pointer-events: none; }
+
+/* Kompas: benskive med en nål */
+#arrow {
+    width: 44px; height: 44px; background: radial-gradient(circle at 35% 30%, #efe3c6, #b9a784); color: #8f2a22; font-size: 19px;
+    border: 3px solid #4a3322; box-shadow: 0 0 0 2px #cdbd9a, 0 6px 14px rgba(0,0,0,.45), inset 0 0 8px rgba(80,50,20,.35); position: relative;
+}
+#arrow::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 1px dashed rgba(60,40,20,.45); }
+#cdist { font-family: var(--serif); font-size: 13px; background: rgba(48,32,22,.88); padding: 1px 9px; border-radius: 9px; border: 1px solid rgba(214,170,110,.45); color: #f1dcb4; }
+
+/* Soldial og vejr */
+#info { background: linear-gradient(180deg, rgba(74,51,34,.88), rgba(48,32,22,.88)); border: 1px solid rgba(214,170,110,.5); border-radius: 12px; padding: 8px 12px 8px; box-shadow: 0 6px 16px rgba(0,0,0,.4); min-width: 128px; }
+#day { font-family: var(--serif); font-size: 20px; color: #f6e8c9; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#day small { font-family: var(--sans); font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #d9b57f; }
+#dial { width: 112px; height: 54px; display: block; margin: 2px auto 0; overflow: visible; }
+#dial .arc-day { fill: none; stroke: rgba(246,232,201,.55); stroke-width: 1.4; stroke-dasharray: 2 3.2; }
+#dial .horizon { stroke: rgba(246,232,201,.35); stroke-width: 1; }
+#dial-body.sun { fill: #ffd36b; filter: drop-shadow(0 0 5px rgba(255,200,90,.9)); }
+#dial-body.moon { fill: #dfe8ff; filter: drop-shadow(0 0 5px rgba(170,200,255,.8)); }
+#weather, #cairns { font-family: var(--serif); font-size: 13.5px; color: #e4cfa6; line-height: 1.35; }
+
+/* Beskeder: læder med syning */
+#toast {
+    font-family: var(--serif); font-size: 17px; color: #f6e8c9; padding: 11px 22px; border-radius: 4px 16px 4px 16px;
+    background: linear-gradient(180deg, #4d3524, #2f2016); border: 1px solid rgba(214,170,110,.6);
+    box-shadow: 0 14px 40px rgba(0,0,0,.5), inset 0 0 0 4px rgba(0,0,0,.18);
+}
+#toast::before { content: ""; position: absolute; left: 10px; right: 10px; top: 3px; height: 7px; opacity: .85; background:
+    radial-gradient(circle at 4px 3.5px, var(--bead-red) 2.2px, transparent 2.7px) 0 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 4px 3.5px, var(--bone) 2.2px, transparent 2.7px) 14px 0 / 28px 7px repeat-x; }
+#toast { position: fixed; padding-top: 18px; }
+
+/* Dagskort: stor serif med perlebånd */
+.dc-main { font-family: var(--serif); font-weight: 400; letter-spacing: 8px; text-shadow: 0 2px 24px rgba(0,0,0,.7); }
+.dc-sub { font-family: var(--serif); }
+#daycard::after { content: ""; display: block; width: 220px; height: 7px; margin: 12px auto 0; background:
+    radial-gradient(circle at 4px 3.5px, var(--bead-red) 2.4px, transparent 2.9px) 0 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 4px 3.5px, var(--bone) 2.4px, transparent 2.9px) 14px 0 / 28px 7px repeat-x; }
+
+/* Handlingsknappens tekst */
+.round.big .lbl { font-family: var(--serif); font-size: 12.5px; font-weight: 400; max-width: 80px; }
+.round small { font-family: var(--serif); font-size: 11.5px; }
+
+/* Titelskærm: fjelde, nordlys og perler */
+#screen-start { background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300' preserveAspectRatio='none'><path d='M0 300 L0 210 L110 150 L190 190 L300 90 L400 170 L520 120 L640 200 L760 100 L880 180 L1010 130 L1120 190 L1200 150 L1200 300Z' fill='%2308101c' fill-opacity='.85'/><path d='M0 300 L0 250 L140 210 L260 240 L420 190 L560 245 L720 205 L880 250 L1040 215 L1200 245 L1200 300Z' fill='%23050a14'/></svg>") bottom / 100% 34% no-repeat,
+    radial-gradient(ellipse 80% 45% at 50% 0%, rgba(80,255,170,.16), transparent 70%),
+    linear-gradient(180deg, rgba(4,9,20,.78), rgba(4,9,20,.2) 55%, rgba(4,9,20,.75)); }
+.screen h1 { font-family: var(--serif); font-weight: 400; letter-spacing: 5px; }
+.kicker { font-family: var(--serif); letter-spacing: 8px; color: #d9b57f; }
+.orn { width: 260px; margin: 12px auto 18px; opacity: .9; }
+.intro { font-family: var(--serif); font-size: 18px; line-height: 1.55; color: #eadfc6; }
+.controls { display: inline-block; text-align: left; margin: 14px 0 6px; padding: 12px 18px; font-size: 13px; line-height: 1.9; color: #d8c9a6;
+    background: rgba(48,32,22,.6); border: 1px solid rgba(214,170,110,.4); border-radius: 12px; }
+.controls b { color: #ffd36b; font-family: var(--serif); font-weight: 400; letter-spacing: 1px; margin-right: 6px; }
+kbd { font-family: var(--sans); font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #cdbd9a; color: #2a1c14; border-bottom: 2px solid #8a7a58; }
+.primary { font-family: var(--serif); font-size: 20px; letter-spacing: 2px; color: #fff2d0; background: linear-gradient(180deg, #7a5333, #4d3220); border: 2px solid #d9b57f; border-radius: 4px 18px 4px 18px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.5), inset 0 0 0 4px rgba(0,0,0,.18); position: relative; padding: 13px 34px; }
+.primary::after { content: ""; position: absolute; inset: 5px; border-radius: 2px 14px 2px 14px; border: 1px dashed rgba(255,235,190,.4); pointer-events: none; }
+.primary:hover { box-shadow: 0 10px 34px rgba(217,154,43,.3), inset 0 0 0 4px rgba(0,0,0,.18); }
+.note { font-family: var(--serif); font-size: 13px; }
+
+/* Knapperækken ligger under infopladen */
+#small-btns { top: calc(env(safe-area-inset-top) + 158px); }
+@media (max-width: 700px) { #small-btns { top: calc(env(safe-area-inset-top) + 150px); } #info { min-width: 118px; } }
+
+/* ---------- Hjemmet og kisten ---------- */
+#home-badge { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 64px); transform: translateX(-50%); padding: 6px 18px; border-radius: 4px 16px 4px 16px;
+    background: linear-gradient(180deg, #4d3524, #2f2016); border: 2px solid var(--bead-gold); font-family: var(--serif); font-size: 18px; display: none; pointer-events: none; z-index: 5; }
+body.inhome #home-badge { display: block; animation: fadeIn .5s ease-out both; }
+body.inhome #ov-storm, body.inhome #ov-frost { display: none; }
+#panel-chest { background: linear-gradient(180deg, #4a3322, #2a1c14); border: 2px solid #6b4a30; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 5px #35241a, inset 0 0 0 6px rgba(214,170,110,.35); }
+#panel-chest .phead h2 { color: #f1dcb4; }
+#chest-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.chest-head { display: grid; grid-template-columns: 1fr auto auto; font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: #d9b57f; padding: 0 6px 6px; }
+.chest-head span:nth-child(2) { margin-right: 168px; } .chest-head span:nth-child(3) { display: none; } .chest-head span:nth-child(4) { margin-right: 6px; }
+.chest-row { display: flex; align-items: center; gap: 6px; padding: 7px 8px; margin-bottom: 5px; border-radius: 10px; background: rgba(0,0,0,.2); border: 1px solid rgba(214,170,110,.2); }
+.chest-row.empty { opacity: .4; }
+.chest-row .ic { font-size: 22px; width: 28px; text-align: center; } .chest-row .nm { flex: 1; font-size: 13.5px; color: #f1dcb4; }
+.chest-row b { min-width: 26px; text-align: center; color: #ffe9a8; } .chest-row b.c { margin-left: 4px; }
+.chest-row button { background: rgba(255,211,107,.15); border: 1px solid rgba(255,211,107,.45); border-radius: 7px; padding: 3px 7px; font-size: 12px; cursor: pointer; color: #fff2d0; }
+.chest-row button:disabled { opacity: .3; cursor: default; }
