@@ -8,9 +8,9 @@ export const G = { STATIC: 1, CAR: 2, DEBRIS: 4, PROP: 8, ALL: 15 };
 export const GRAVITY = -14; // heavier than real for arcade weight
 
 export const PLAYER_CARS = [
-  { id: 'gt', name: 'Jens GT', model: 'sports', color: 0xff5a00, mass: 1350, maxSpeed: 60, boostSpeed: 75, accel: 24,
+  { id: 'gt', name: 'Rød Raket', model: 'sports', color: 0xff5a00, mass: 1350, maxSpeed: 60, boostSpeed: 75, accel: 24,
     desc: 'Let og lynhurtig. Flyver langt.' },
-  { id: 'muscle', name: 'Onkel Muskel', model: 'muscle', color: 0x1d4ed8, mass: 1800, maxSpeed: 57, boostSpeed: 71, accel: 21,
+  { id: 'muscle', name: 'Blå Bøffel', model: 'muscle', color: 0x1d4ed8, mass: 1800, maxSpeed: 57, boostSpeed: 71, accel: 21,
     desc: 'Tung front – skubber biler væk.' },
   { id: 'tank', name: 'Brumbassen', model: 'suv', color: 0x2f9e44, mass: 2600, maxSpeed: 51, boostSpeed: 64, accel: 18,
     desc: 'Langsom kampvogn. Kløver alt.' },
