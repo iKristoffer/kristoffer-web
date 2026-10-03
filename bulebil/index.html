@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulebil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+} }
+</script>
+<style>
+  :root { --hot:#ff6a00; --gold:#ffd23f; --ink:#0b0d12; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; overflow:hidden; background:#000; color:#fff; font-family:'Rajdhani',sans-serif; user-select:none; }
+  #app canvas { display:block; }
+  .hidden { display:none !important; }
+  .num { font-family:'Russo One',sans-serif; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:fixed; inset:0; pointer-events:none; }
+  #lvl { position:absolute; left:24px; top:18px; }
+  #lvl .name { font-family:'Russo One'; font-size:22px; font-style:italic; text-transform:uppercase; text-shadow:0 2px 6px #000; }
+  #lvl .targets { margin-top:6px; font-size:15px; font-weight:700; line-height:1.35; text-shadow:0 1px 3px #000; }
+  #lvl .targets span.dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+  #lvl .targets .done { opacity:.45; text-decoration:line-through; }
+  #scorebox { position:absolute; right:24px; top:14px; text-align:right; }
+  #cash { font-family:'Russo One'; font-size:52px; font-style:italic; color:var(--gold); text-shadow:0 3px 0 #7a3b00, 0 0 18px rgba(255,140,0,.6); }
+  #mult { display:inline-block; font-family:'Russo One'; font-size:26px; background:var(--hot); color:#fff; padding:2px 12px; transform:skewX(-12deg); margin-left:10px; vertical-align:middle; }
+  #mult.heart { background:#d61f45; }
+  #cars { font-family:'Russo One'; font-size:22px; font-style:italic; text-shadow:0 2px 4px #000; }
+  #speedbox { position:absolute; left:24px; bottom:22px; }
+  #speed { font-family:'Russo One'; font-size:56px; font-style:italic; line-height:1; text-shadow:0 3px 8px #000; }
+  #speed small { font-size:18px; margin-left:6px; }
+  .bar { width:260px; height:14px; background:rgba(0,0,0,.55); border:2px solid rgba(255,255,255,.75); transform:skewX(-18deg); margin-top:8px; overflow:hidden; }
+  .bar > i { display:block; height:100%; width:0; background:linear-gradient(90deg,#2fb4ff,#a6f0ff); }
+  .barlabel { font-weight:700; font-size:14px; letter-spacing:2px; margin-top:6px; }
+  #breakerbox { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); text-align:center; }
+  #breakerbar { display:flex; gap:5px; justify-content:center; }
+  #breakerbar b { width:30px; height:16px; background:rgba(0,0,0,.5); border:2px solid rgba(255,255,255,.7); transform:skewX(-18deg); }
+  #breakerbar b.on { background:linear-gradient(#ffb347,#ff4b00); border-color:#ffd9a0; }
+  #breakerbox.ready #breakerbar b { animation:flash .35s infinite alternate; }
+  #breakerbox .barlabel { font-family:'Russo One'; font-style:italic; letter-spacing:3px; }
+  @keyframes flash { from { filter:brightness(1); } to { filter:brightness(1.9); box-shadow:0 0 14px #ff8a00; } }
+  #impactbox { position:absolute; right:24px; bottom:22px; text-align:right; }
+  #impactbox .bar > i { background:linear-gradient(90deg,#ff2a6d,#ffc2d4); }
+  #msgs { position:absolute; left:0; right:0; top:26%; text-align:center; }
+  .msg { font-family:'Russo One'; font-style:italic; font-size:44px; text-transform:uppercase; color:#fff; text-shadow:0 4px 0 #b33a00, 0 0 24px rgba(255,120,0,.8); animation:pop 1.6s ease-out forwards; margin:4px 0; }
+  .msg.gold { color:var(--gold); }
+  .msg.red { color:#ff4d6d; text-shadow:0 4px 0 #6b0015, 0 0 24px rgba(255,0,60,.7); }
+  .msg.big { font-size:96px; }
+  .msg.huge { font-size:110px; color:#ffcf3f; }
+  .msg.small { font-size:28px; }
+  @keyframes pop { 0% { transform:scale(2.2) skewX(-8deg); opacity:0; } 12% { transform:scale(1) skewX(-8deg); opacity:1; } 75% { opacity:1; } 100% { transform:scale(.9) translateY(-30px) skewX(-8deg); opacity:0; } }
+  #prompt { position:absolute; left:0; right:0; top:60%; text-align:center; font-family:'Russo One'; font-size:40px; font-style:italic; color:#ffb020; text-shadow:0 3px 0 #6a2600; animation:flash .4s infinite alternate; }
+  #banner { position:absolute; left:0; right:0; top:62%; text-align:center; }
+  #banner .t { font-family:'Russo One'; font-size:64px; font-style:italic; text-transform:uppercase; text-shadow:0 4px 0 #b33a00, 0 0 30px #000; }
+  #banner .s { font-size:22px; font-weight:700; text-shadow:0 2px 4px #000; }
+  #banner .k { margin-top:14px; font-size:16px; opacity:.8; }
+  #countdown { position:absolute; left:50%; top:30%; transform:translateX(-50%); text-align:center; }
+  #countdown .n { font-family:'Russo One'; font-size:150px; font-style:italic; line-height:1; color:#fff; text-shadow:0 6px 0 #b33a00; }
+  #rev { position:relative; width:420px; height:26px; margin:14px auto 0; background:rgba(0,0,0,.6); border:3px solid #fff; transform:skewX(-18deg); overflow:hidden; }
+  #rev .zone { position:absolute; top:0; bottom:0; background:rgba(60,255,120,.55); }
+  #rev .red { position:absolute; top:0; bottom:0; right:0; background:rgba(255,40,40,.5); }
+  #rev .needle { position:absolute; top:-4px; bottom:-4px; width:6px; background:#ffd23f; box-shadow:0 0 10px #ffd23f; }
+  #countdown .hint { margin-top:10px; font-weight:700; font-size:18px; text-shadow:0 2px 4px #000; }
+
+  /* ---------- Menu / results ---------- */
+  .panel { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.75)); }
+  #menu { justify-content:flex-start; padding-top:5vh; overflow:auto; }
+  .logo { font-family:'Russo One'; font-size:min(13vw,120px); font-style:italic; line-height:.9; letter-spacing:-2px;
+    background:linear-gradient(180deg,#fff7c2 0%,#ffd23f 35%,#ff6a00 70%,#c41a00 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 6px 0 #4a1000) drop-shadow(0 0 30px rgba(255,90,0,.5)); transform:skewX(-8deg); }
+  .sub { font-family:'Russo One'; font-size:22px; letter-spacing:8px; margin:6px 0 26px; color:#fff; text-shadow:0 2px 6px #000; }
+  .row { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:1100px; padding:0 16px; }
+  .card { pointer-events:auto; cursor:pointer; width:240px; padding:14px 16px; background:rgba(10,12,18,.82); border:2px solid rgba(255,255,255,.18); transform:skewX(-6deg); transition:transform .12s, border-color .12s; }
+  .card:hover, .card.sel { border-color:var(--hot); transform:skewX(-6deg) scale(1.04); }
+  .card h3 { margin:0; font-family:'Russo One'; font-style:italic; font-size:20px; text-transform:uppercase; }
+  .card p { margin:6px 0 8px; font-size:15px; opacity:.85; line-height:1.25; }
+  .card .best { font-size:14px; font-weight:700; color:var(--gold); }
+  .label { font-family:'Russo One'; letter-spacing:4px; font-size:14px; margin:22px 0 10px; opacity:.85; }
+  .carbtn { width:200px; }
+  .controls { margin:26px 0 30px; font-size:15px; opacity:.8; text-align:center; line-height:1.6; padding:0 16px; }
+  kbd { font-family:'Russo One'; font-size:12px; background:#222; border:1px solid #555; border-radius:3px; padding:1px 6px; }
+  #results .box { background:rgba(8,10,16,.9); border:2px solid var(--hot); padding:26px 40px; min-width:min(520px,92vw); transform:skewX(-4deg); }
+  #results h2 { margin:0 0 14px; font-family:'Russo One'; font-style:italic; font-size:40px; color:var(--gold); text-transform:uppercase; }
+  #results table { width:100%; font-size:20px; font-weight:700; border-collapse:collapse; }
+  #results td { padding:4px 0; }
+  #results td:last-child { text-align:right; font-family:'Russo One'; }
+  #results tr.total td { font-size:30px; color:var(--gold); border-top:2px solid rgba(255,255,255,.3); padding-top:10px; }
+  #results .medal { font-family:'Russo One'; font-size:30px; font-style:italic; margin:16px 0 4px; text-transform:uppercase; }
+  #results .keys { margin-top:16px; font-size:16px; opacity:.85; }
+  #results .newbest { color:#7dff9e; font-weight:700; }
+  #loading { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-family:'Russo One'; font-size:28px; font-style:italic; letter-spacing:4px; }
+  @media (max-width:700px) { #cash { font-size:34px; } .msg { font-size:30px; } .msg.big,.msg.huge { font-size:56px; } #rev { width:80vw; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="hud" class="hidden">
+  <div id="lvl"><div class="name"></div><div class="targets"></div></div>
+  <div id="scorebox"><div><span id="cash">$0</span><span id="mult">×1</span></div><div id="cars">BILER 0</div></div>
+  <div id="speedbox"><div id="speed">0<small>km/t</small></div><div class="bar" id="boostbar"><i></i></div><div class="barlabel">BOOST</div></div>
+  <div id="impactbox" class="hidden"><div class="bar" id="impactbar"><i></i></div><div class="barlabel">IMPACT TIME (SHIFT)</div></div>
+  <div id="breakerbox"><div id="breakerbar"></div><div class="barlabel">CRASHBREAKER</div></div>
+  <div id="msgs"></div>
+  <div id="prompt" class="hidden"></div>
+  <div id="banner" class="hidden"><div class="t"></div><div class="s"></div><div class="k">Tryk <kbd>MELLEMRUM</kbd> for at springe over</div></div>
+  <div id="countdown" class="hidden"><div class="n"></div><div id="rev"><div class="zone"></div><div class="red"></div><div class="needle"></div></div><div class="hint">Hold <kbd>W</kbd> og ram det grønne felt ved START for boost-start</div></div>
+</div>
+
+<div id="menu" class="panel hidden">
+  <div class="logo" id="logo">BULEBIL</div>
+  <div class="sub">CRASH MODE</div>
+  <div class="label">VÆLG BIL</div>
+  <div class="row" id="carrow"></div>
+  <div class="label">GRAFIK</div>
+  <div class="row" id="gfxrow"></div>
+  <div class="label">VÆLG KRYDS</div>
+  <div class="row" id="levelrow"></div>
+  <div class="controls">
+    <kbd>W</kbd>/<kbd>↑</kbd> gas · <kbd>S</kbd>/<kbd>↓</kbd> brems · <kbd>A</kbd><kbd>D</kbd> styr · <kbd>SHIFT</kbd> boost / impact time · <kbd>MELLEMRUM</kbd> håndbremse (drift) / crashbreaker · <kbd>R</kbd> igen · <kbd>ESC</kbd> menu<br>
+    Efter crashet styrer du vraget med <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>S</kbd> (aftertouch). Gamepad virker også.
+  </div>
+</div>
+
+<div id="results" class="panel hidden"><div class="box"></div></div>
+<div id="loading">INDLÆSER…</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
