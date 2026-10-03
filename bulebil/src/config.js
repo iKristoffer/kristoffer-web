@@ -26,3 +26,27 @@ export const MEDALS = [
   { key: 'gold', name: 'Guld', color: '#ffd23f' },
   { key: 'plat', name: 'Platin', color: '#9ff3ff' },
 ];
+
+// Driving model tuning (used by player.js). Adjustable live in Testkørsel (T), saved in localStorage.
+export const DRIVE_DEFAULTS = {
+  grip: 30, hbGrip: 7, steerIn: 3, steerOut: 6, maxAngle: 0.6, angleFalloff: 25,
+  yawCap: 1.0, hbYawCap: 2.2, yawResponse: 8, slideScrub: 0.25, accelMul: 1, roll: 0.004, pitch: 0.0025,
+};
+export const DRIVE_PARAMS = [
+  { k: 'grip', label: 'Dækgreb (m/s²)', min: 10, max: 60, step: 1 },
+  { k: 'hbGrip', label: 'Greb med håndbremse', min: 2, max: 25, step: 0.5 },
+  { k: 'steerIn', label: 'Rat ind (pr. s)', min: 1, max: 12, step: 0.5 },
+  { k: 'steerOut', label: 'Rat tilbage (pr. s)', min: 1, max: 15, step: 0.5 },
+  { k: 'maxAngle', label: 'Max styrevinkel (rad)', min: 0.2, max: 1.0, step: 0.02 },
+  { k: 'angleFalloff', label: 'Vinkel-fald med fart (m/s)', min: 8, max: 80, step: 1 },
+  { k: 'yawCap', label: 'Drejeloft (× greb)', min: 0.6, max: 2.0, step: 0.05 },
+  { k: 'hbYawCap', label: 'Drejeloft håndbremse', min: 1, max: 4, step: 0.1 },
+  { k: 'yawResponse', label: 'Drejerespons', min: 2, max: 25, step: 0.5 },
+  { k: 'slideScrub', label: 'Fartstab ved glid', min: 0, max: 1, step: 0.05 },
+  { k: 'accelMul', label: 'Acceleration (×)', min: 0.5, max: 2, step: 0.05 },
+  { k: 'roll', label: 'Krængning', min: 0, max: 0.012, step: 0.0005 },
+  { k: 'pitch', label: 'Nik ved gas/brems', min: 0, max: 0.008, step: 0.0005 },
+];
+export const DRIVE = { ...DRIVE_DEFAULTS };
+try { Object.assign(DRIVE, JSON.parse(localStorage.getItem('bulebil.drive') || '{}')); } catch { /* ignore */ }
+export function saveDrive() { try { localStorage.setItem('bulebil.drive', JSON.stringify(DRIVE)); } catch { /* ignore */ } }

@@ -1,5 +1,6 @@
 import { fmtMoney } from './util.js';
-import { MEDALS, PLAYER_CARS, GAME_TITLE, GAME_SUBTITLE } from './config.js';
+import { MEDALS, PLAYER_CARS, GAME_TITLE, DRIVE, DRIVE_DEFAULTS, DRIVE_PARAMS, saveDrive } from './config.js';
+import { fmtTime } from './testmode.js';
 import { LEVELS } from './levels.js';
 import { PS1 } from './ps1.js';
 
@@ -22,50 +23,184 @@ export class Hud {
     this.game = game;
     this.shownCash = 0;
     $('logo').textContent = GAME_TITLE;
-    document.querySelector('#menu .sub').textContent = GAME_SUBTITLE;
+    this.wireMenus();
     document.title = GAME_TITLE[0] + GAME_TITLE.slice(1).toLowerCase();
   }
 
-  // ---------- menu ----------
-  showMenu(sel) {
+  // ---------- menus ----------
+  // Screens: main / crash / test / settings. Keyboard: arrows move focus, Enter activates,
+  // Esc goes back (handled by Game.frame so it never also reaches the game).
+  wireMenus() {
+    for (const b of document.querySelectorAll('[data-go]')) b.onclick = () => this.screen(b.dataset.go);
+    for (const b of document.querySelectorAll('[data-back]')) b.onclick = () => this.back();
+    for (const b of document.querySelectorAll('[data-p]')) b.onclick = () => this.game.pauseAction(b.dataset.p);
+    $('btn-test-go').onclick = () => this.game.startTest();
+    for (const b of $('set-gfx').querySelectorAll('button')) b.onclick = () => this.game.setGraphics(b.dataset.v === 'ps1');
+    $('set-vol').oninput = e => { this.game.setVolume(e.target.value / 100); $('set-vol-v').textContent = e.target.value; };
+    $('set-reset').onclick = () => {
+      if (!this.confirmReset) { this.confirmReset = true; $('set-reset').textContent = 'Er du sikker?'; return; }
+      this.confirmReset = false;
+      $('set-reset').textContent = 'Nulstil alle';
+      this.game.resetRecords();
+      $('set-note').textContent = 'Alle rekorder og omgangstider er nulstillet.';
+    };
+    addEventListener('keydown', e => this.menuKey(e));
+    $('tune-close').onclick = () => this.toggleTune(false);
+    $('tune-reset').onclick = () => { this.game.resetDrive(); this.renderTune(); };
+  }
+
+  menuOpen() { return !$('menu').classList.contains('hidden'); }
+  pauseOpen() { return !$('pause').classList.contains('hidden'); }
+
+  focusables() {
+    const root = this.menuOpen() ? $('screen-' + this.cur) : this.pauseOpen() ? $('pause') : null;
+    if (!root) return [];
+    return [...root.querySelectorAll('.mbtn:not([disabled]), .card, .seg button, .segbtn, input')];
+  }
+
+  menuKey(e) {
+    const list = this.focusables();
+    if (!list.length) return;
+    const a = document.activeElement, i = list.indexOf(a);
+    const onRange = a && a.type === 'range';
+    let d = 0;
+    if (e.code === 'ArrowDown' || (e.code === 'ArrowRight' && !onRange)) d = 1;
+    if (e.code === 'ArrowUp' || (e.code === 'ArrowLeft' && !onRange)) d = -1;
+    if (d) { e.preventDefault(); list[(i + d + list.length) % list.length].focus(); return; }
+    if ((e.code === 'Enter' || e.code === 'Space') && a && list.includes(a) && !onRange) { e.preventDefault(); a.click(); }
+  }
+
+  showMenu(screen = 'main', over = false) {
     $('hud').classList.add('hidden');
     $('results').classList.add('hidden');
+    $('pause').classList.add('hidden');
     $('menu').classList.remove('hidden');
-    const cr = $('carrow');
-    cr.innerHTML = '';
-    for (const c of PLAYER_CARS) {
-      const d = document.createElement('div');
-      d.className = 'card carbtn' + (c.id === sel.car ? ' sel' : '');
-      d.innerHTML = `<h3>${c.name}</h3><p>${c.desc}</p>`;
-      d.onclick = () => this.game.selectCar(c.id);
-      cr.appendChild(d);
+    $('menu').classList.toggle('over', over);
+    this.fromPause = over;
+    this.screen(screen);
+  }
+
+  screen(name) {
+    this.cur = name;
+    for (const el of document.querySelectorAll('#menu .screen')) el.classList.toggle('hidden', el.id !== 'screen-' + name);
+    $('logo').classList.toggle('hidden', this.fromPause);
+    $('sub').classList.toggle('hidden', this.fromPause);
+    if (name === 'crash' || name === 'test') this.renderCars();
+    if (name === 'crash') this.renderLevels();
+    if (name === 'settings') this.renderSettings();
+    const first = this.focusables().find(el => el.classList.contains('sel')) || this.focusables()[0];
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  back() {
+    if (this.fromPause) { this.hideMenu(); this.showPause(); return; }
+    if (this.cur !== 'main') this.screen('main');
+  }
+
+  renderCars() {
+    for (const row of document.querySelectorAll('.carrow')) {
+      row.innerHTML = '';
+      for (const c of PLAYER_CARS) {
+        const d = document.createElement('div');
+        d.className = 'card carbtn' + (c.id === this.game.sel.car ? ' sel' : '');
+        d.tabIndex = 0;
+        d.innerHTML = `<h3>${c.name}</h3><p>${c.desc}</p>`;
+        d.onclick = () => { this.game.selectCar(c.id); this.renderCars(); row.children[PLAYER_CARS.indexOf(c)].focus(); };
+        row.appendChild(d);
+      }
     }
-    const gr = $('gfxrow');
-    gr.innerHTML = '';
-    for (const [ps1, name, desc] of [[false, 'Moderne', 'Skygger, refleksioner, høj opløsning'], [true, 'PS1 (1995)', 'Pixels, vaklende polygoner, dithering']]) {
-      const d = document.createElement('div');
-      d.className = 'card carbtn' + (ps1 === PS1 ? ' sel' : '');
-      d.innerHTML = `<h3>${name}</h3><p>${desc}</p>`;
-      d.onclick = () => this.game.setGraphics(ps1);
-      gr.appendChild(d);
-    }
+  }
+
+  renderLevels() {
     const lr = $('levelrow');
     lr.innerHTML = '';
     for (const L of LEVELS) {
       const best = loadBest(L.id);
       const d = document.createElement('div');
       d.className = 'card';
+      d.tabIndex = 0;
       const medal = best && best.medal >= 0 ? `<span style="color:${MEDALS[best.medal].color}">● ${MEDALS[best.medal].name}</span> · ` : '';
       d.innerHTML = `<h3>${L.name}</h3><p>${L.blurb}</p><div class="best">${best ? medal + 'Rekord ' + fmtMoney(best.score) : 'Ikke spillet'}</div>`;
       d.onclick = () => this.game.startLevel(L.id);
       lr.appendChild(d);
     }
   }
+
+  renderSettings() {
+    for (const b of $('set-gfx').querySelectorAll('button')) b.classList.toggle('on', (b.dataset.v === 'ps1') === PS1);
+    const v = Math.round(this.game.audio.vol * 100);
+    $('set-vol').value = v; $('set-vol-v').textContent = v;
+    $('set-note').textContent = 'Skift af grafik genindlæser spillet.';
+  }
+
   hideMenu() { $('menu').classList.add('hidden'); }
+
+  showPause() {
+    $('pause').classList.remove('hidden');
+    $('pause').querySelector('.mbtn').focus();
+  }
+  hidePause() { $('pause').classList.add('hidden'); }
+
+  // ---------- test drive ----------
+  testStart(m) {
+    $('hud').classList.remove('hidden');
+    $('results').classList.add('hidden');
+    for (const id of ['lvl', 'scorebox', 'breakerbox', 'impactbox', 'prompt', 'banner', 'countdown']) $(id).classList.add('hidden');
+    $('lapbox').classList.remove('hidden');
+    $('msgs').innerHTML = '';
+    this.test = m;
+    this.toggleTune(false);
+  }
+
+  testUpdate(m) {
+    const s = m.s, d = s.driver;
+    $('laptime').textContent = m.lapOn ? fmtTime(m.lapT) : 'Kør over stregen';
+    $('laprows').innerHTML = `Omgang ${m.lapNo || '–'}<br>Sidste ${fmtTime(m.last)}<br>Bedste ${fmtTime(m.best)}`;
+    const g = Math.abs(d.latAcc || 0) / 9.82;
+    $('telemetry').innerHTML = `Sideglid ${Math.abs(d.lat || 0).toFixed(1)} m/s · ${g.toFixed(2)} g sideværts`
+      + (d.offroad ? ' · <span class="off">I græsset</span>' : '');
+    const kmh = Math.round(s.player.body.velocity.length() * 3.6);
+    $('speed').innerHTML = `${kmh}<small>km/t</small>`;
+    $('boostbar').firstElementChild.style.width = (d.boost * 100) + '%';
+    if (!$('tune').classList.contains('hidden')) this.updateTuneValues();
+  }
+
+  toggleTune(force) {
+    const el = $('tune');
+    const show = force ?? el.classList.contains('hidden');
+    el.classList.toggle('hidden', !show);
+    if (show) this.renderTune();
+  }
+
+  renderTune() {
+    const rows = $('tune-rows');
+    rows.innerHTML = '';
+    for (const p of DRIVE_PARAMS) {
+      const r = document.createElement('div');
+      r.className = 'row2';
+      r.innerHTML = `<span>${p.label}</span><span class="val" data-k="${p.k}"></span><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${DRIVE[p.k]}">`;
+      const inp = r.querySelector('input');
+      inp.oninput = () => { DRIVE[p.k] = Number(inp.value); saveDrive(); this.updateTuneValues(); };
+      inp.onchange = () => inp.blur(); // hand the arrow keys back to the car
+      rows.appendChild(r);
+    }
+    this.updateTuneValues();
+  }
+
+  updateTuneValues() {
+    for (const el of document.querySelectorAll('#tune .val')) {
+      const v = DRIVE[el.dataset.k], dflt = DRIVE_DEFAULTS[el.dataset.k];
+      el.textContent = +v.toFixed(4);
+      el.style.color = v === dflt ? '' : 'var(--gold)';
+    }
+  }
 
   // ---------- run ----------
   runStart(def, best) {
     $('hud').classList.remove('hidden');
+    for (const id of ['lvl', 'scorebox', 'breakerbox']) $(id).classList.remove('hidden');
+    $('lapbox').classList.add('hidden');
+    this.toggleTune(false);
     $('results').classList.add('hidden');
     $('prompt').classList.add('hidden');
     $('impactbox').classList.add('hidden');

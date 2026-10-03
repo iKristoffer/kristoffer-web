@@ -11,6 +11,8 @@ import { FX } from './fx.js';
 import { Debris } from './debris.js';
 import { CamRig } from './camera.js';
 import { CrashMode } from './crashmode.js';
+import { TestDriveMode } from './testmode.js';
+import { buildTrack } from './track.js';
 import { TRAFFIC_COLORS } from './config.js';
 import { pick } from './util.js';
 import { PS1 } from './ps1.js';
@@ -28,10 +30,12 @@ export class Session {
     this.fx = new FX(this);
     this.debris = new Debris(this);
     buildLevel(this, def);
+    if (def.track) buildTrack(this, def);
     this.traffic = new Traffic(this, def);
 
     this.player = new Vehicle(this, carSpec.model, carSpec.color, { mass: carSpec.mass, isPlayer: true });
-    this.player.setPose(def.start[0], def.start[1], def.start[2]);
+    const start = def.start || this.trackStart;
+    this.player.setPose(start[0], start[1], start[2]);
     this.driver = new PlayerDriver(this, this.player, carSpec);
 
     for (const p of def.parked || []) {
@@ -44,7 +48,7 @@ export class Session {
     for (const v of this.vehicles) if (v.state === 'parked') v.body.sleep();
 
     this.cam = new CamRig(game.camera);
-    this.mode = new CrashMode(this);
+    this.mode = def.mode === 'test' ? new TestDriveMode(this) : new CrashMode(this);
   }
 
   setupScene() {

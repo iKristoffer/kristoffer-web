@@ -10,8 +10,8 @@ import { Input } from './input.js';
 import { Sound } from './audio.js';
 import { Hud } from './hud.js';
 import { Session } from './session.js';
-import { LEVELS } from './levels.js';
-import { PLAYER_CARS } from './config.js';
+import { LEVELS, TEST_TRACK } from './levels.js';
+import { PLAYER_CARS, DRIVE, DRIVE_DEFAULTS, saveDrive } from './config.js';
 import { MODELS } from './vehicleModel.js';
 
 class Game {
@@ -55,7 +55,9 @@ class Game {
     addEventListener('keydown', () => this.audio.unlock());
 
     this.buildMenuScene();
-    this.toMenu();
+    let ret = null;
+    try { ret = sessionStorage.getItem('bulebil.return'); sessionStorage.removeItem('bulebil.return'); } catch { /* ignore */ }
+    this.toMenu(ret || 'main');
     document.getElementById('loading').classList.add('hidden');
     this.last = performance.now();
     r.setAnimationLoop(() => this.frame());
@@ -67,7 +69,6 @@ class Game {
   updateDitherRes() {
     if (this.dither) this.dither.uniforms.res.value.set(Math.round(innerWidth * this.pixelRatio()), PS1_LINES);
   }
-  setGraphics(ps1) { if (ps1 !== PS1) setGraphics(ps1); }
 
   makeEnv() {
     const sky = new Sky();
@@ -119,24 +120,25 @@ class Game {
     this.sel.car = id;
     try { localStorage.setItem('bulebil.car', id); } catch { /* ignore */ }
     this.setMenuCar();
-    this.hud.showMenu(this.sel);
   }
 
-  toMenu() {
+  toMenu(screen = 'main') {
     if (this.session) { this.session.dispose(); this.session = null; }
+    this.paused = false;
     this.audio.engine(0, 0, false);
     this.audio.slowmo(false);
-    this.hud.showMenu(this.sel);
+    this.hud.showMenu(screen);
     this.renderPass.scene = this.menuScene;
   }
 
-  startLevel(id) {
-    this.sel.level = id;
+  startSession(def) {
+    this.sel.def = def;
+    this.paused = false;
     this.hud.hideMenu();
+    this.hud.hidePause();
     document.getElementById('loading').classList.remove('hidden');
     setTimeout(() => {
       if (this.session) this.session.dispose();
-      const def = LEVELS.find(l => l.id === id);
       const car = PLAYER_CARS.find(c => c.id === this.sel.car) || PLAYER_CARS[0];
       this.session = new Session(this, def, car);
       this.renderPass.scene = this.session.scene;
@@ -144,8 +146,39 @@ class Game {
       this.last = performance.now();
     }, 30);
   }
+  startLevel(id) { this.startSession(LEVELS.find(l => l.id === id)); }
+  startTest() { this.startSession(TEST_TRACK); }
+  restart() { if (this.sel.def) this.startSession(this.sel.def); }
 
-  restart() { if (this.sel.level) this.startLevel(this.sel.level); }
+  pause() {
+    this.paused = true;
+    this.audio.engine(0, 0, false);
+    this.audio.slowmo(false);
+    this.hud.showPause();
+  }
+  resume() {
+    this.paused = false;
+    this.hud.hidePause();
+    this.hud.hideMenu();
+    this.last = performance.now();
+  }
+  pauseAction(a) {
+    if (a === 'resume') this.resume();
+    else if (a === 'restart') this.restart();
+    else if (a === 'settings') { this.hud.hidePause(); this.hud.showMenu('settings', true); }
+    else if (a === 'menu') this.toMenu();
+  }
+
+  setGraphics(ps1) {
+    if (ps1 === PS1) return;
+    try { sessionStorage.setItem('bulebil.return', 'settings'); } catch { /* ignore */ }
+    setGraphics(ps1);
+  }
+  setVolume(v) { this.audio.setVolume(v); }
+  resetRecords() {
+    try { for (const k of Object.keys(localStorage)) if (k.startsWith('bulebil.best') ) localStorage.removeItem(k); } catch { /* ignore */ }
+  }
+  resetDrive() { Object.assign(DRIVE, DRIVE_DEFAULTS); saveDrive(); }
 
   resize() {
     this.camera.aspect = innerWidth / innerHeight;
@@ -162,17 +195,20 @@ class Game {
     const dt = Math.min(1 / 30, (now - this.last) / 1000);
     this.last = now;
     this.input.update();
+    const esc = this.input.pressed('Escape');
     if (this.session) {
-      if (this.input.pressed('Escape')) this.toMenu();
-      else if (this.input.pressed('KeyR')) this.restart();
+      if (this.hud.menuOpen()) { if (esc) this.hud.back(); }
+      else if (this.paused) { if (esc) this.resume(); }
+      else if (esc) { if (this.session.mode.state === 'results') this.toMenu(); else this.pause(); }
+      else if (this.input.pressed('KeyR')) { if (this.session.mode.reset) this.session.mode.reset(); else this.restart(); }
       else this.session.update(dt);
     } else {
+      if (esc) this.hud.back();
       this.turntable.rotation.y += dt * 0.4;
       const t = now * 0.0001;
-      this.camera.position.set(Math.sin(t) * 1.5 + 6.2, 2.0, 6.2);
-      this.camera.lookAt(0, 0.6, 0);
+      this.camera.position.set(Math.sin(t) * 1.5 + 7.6, 2.3, 7.6);
+      this.camera.lookAt(-2.2, 0.9, 1.2);
       if (this.camera.fov !== 40) { this.camera.fov = 40; this.camera.updateProjectionMatrix(); }
-      if (this.input.pressed('Enter')) this.startLevel(this.sel.level || LEVELS[0].id);
     }
     this.input.endFrame();
     this.composer.render();

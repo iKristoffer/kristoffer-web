@@ -139,3 +139,14 @@ export const LEVELS = [
     prewarm: 22,
   },
 ];
+
+// Testkørsel: empty circuit, no traffic. Start pose and focus are filled in by track.js.
+export const TEST_TRACK = {
+  id: 'test', name: 'Testbanen', mode: 'test', blurb: 'Tom bane uden trafik.',
+  roads: [], junctions: [], lanes: [], prewarm: 0, focus: [0, 0],
+  track: {
+    startAt: [0, -40],
+    points: [[0, -150], [0, 120], [20, 190], [80, 215], [150, 200], [185, 140], [160, 80], [110, 55],
+      [100, 0], [150, -50], [230, -60], [260, -130], [220, -210], [130, -240], [40, -225]],
+  },
+};

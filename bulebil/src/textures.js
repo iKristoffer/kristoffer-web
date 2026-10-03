@@ -157,3 +157,35 @@ export const glowTexture = () => once('glow', () => {
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
   return tex(c, false);
 });
+
+// Circuit tarmac: 14 m wide (512 px), 12 m per tile, white edge lines only.
+export const trackTexture = () => once('track', () => {
+  const W = 512, H = 512;
+  const [c, g] = asphalt(W, H);
+  const ppm = W / 14;
+  g.fillStyle = '#ecece6';
+  g.fillRect(0.3 * ppm, 0, 0.25 * ppm, H);
+  g.fillRect(W - 0.55 * ppm, 0, 0.25 * ppm, H);
+  g.fillStyle = 'rgba(0,0,0,0.12)';
+  g.fillRect(W / 2 - 3.5 * ppm, 0, 1.6 * ppm, H);
+  g.fillRect(W / 2 + 1.9 * ppm, 0, 1.6 * ppm, H);
+  return tex(c);
+});
+
+// Kerb: red/white blocks, one tile = 1.2 m wide × 4 m long.
+export const kerbTexture = () => once('kerb', () => {
+  const [c, g] = cv(64, 128);
+  g.fillStyle = '#d8231b'; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#f2f2ee'; g.fillRect(0, 64, 64, 64);
+  speckle(g, 64, 128, 400, ['rgba(0,0,0,0.12)'], 2);
+  return tex(c);
+});
+
+export const checkerTexture = () => once('checker', () => {
+  const [c, g] = cv(128, 32);
+  for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++) {
+    g.fillStyle = (x + y) % 2 ? '#111' : '#f4f4f4';
+    g.fillRect(x * 8, y * 8, 8, 8);
+  }
+  return tex(c);
+});

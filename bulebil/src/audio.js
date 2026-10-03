@@ -1,6 +1,16 @@
 // Fully synthesized WebAudio: engine drone, crash impacts, glass, explosions, UI blips.
 export class Sound {
-  constructor() { this.ctx = null; this.recent = []; }
+  constructor() {
+    this.ctx = null; this.recent = [];
+    this.vol = 0.8;
+    try { const v = localStorage.getItem('bulebil.volume'); if (v != null) this.vol = Number(v); } catch { /* ignore */ }
+  }
+
+  setVolume(v) {
+    this.vol = v;
+    if (this.master) this.master.gain.value = 0.85 * v;
+    try { localStorage.setItem('bulebil.volume', String(v)); } catch { /* ignore */ }
+  }
 
   unlock() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
@@ -9,7 +19,7 @@ export class Sound {
     comp.threshold.value = -14; comp.ratio.value = 6;
     this.slowFilter = ctx.createBiquadFilter();
     this.slowFilter.type = 'lowpass'; this.slowFilter.frequency.value = 20000;
-    this.master = ctx.createGain(); this.master.gain.value = 0.7;
+    this.master = ctx.createGain(); this.master.gain.value = 0.85 * this.vol;
     this.master.connect(this.slowFilter).connect(comp).connect(ctx.destination);
     const len = ctx.sampleRate * 4;
     this.noise = ctx.createBuffer(1, len, ctx.sampleRate);

@@ -12,7 +12,7 @@ const LW = TX.LANE_W;
 // Everything else is drawn after them and simply covers them. Heights are kept as a small extra.
 const Y = { pad: 0.006, sidewalk: 0.012, junction: 0.024, curb: 0.03, line: 0.036 };
 const LAYER = { ground: 0, road: 1, pad: 2, sidewalk: 3, junction: 4, curb: 5, line: 6 };
-function decal(mesh, layer) {
+export function decal(mesh, layer) {
   mesh.renderOrder = -100 + LAYER[layer];
   mesh.material.depthWrite = false;
   mesh.castShadow = false;

@@ -2,7 +2,7 @@
 // we push velocity along the car's forward axis, remove lateral slip up to a grip limit
 // (beyond it the car slides) and steer the yaw rate with a speed-capped bicycle model.
 import * as CANNON from 'cannon-es';
-import { G } from './config.js';
+import { G, DRIVE as D } from './config.js';
 import { clamp } from './util.js';
 
 const FWD = new CANNON.Vec3(0, 0, 1), RIGHT = new CANNON.Vec3(-1, 0, 0);
@@ -42,33 +42,38 @@ export class PlayerDriver {
       // Steering wheel: ramps in, returns to centre faster (keyboard is digital ±1).
       const target = inp.steer;
       const back = target === 0 || Math.sign(target) !== Math.sign(this.steer);
-      this.steer += clamp(target - this.steer, -(back ? 6 : 3) * h, (back ? 6 : 3) * h);
+      const rate = back ? D.steerOut : D.steerIn;
+      this.steer += clamp(target - this.steer, -rate * h, rate * h);
 
       const sp = Math.abs(fs);
+      // Surface: off the tarmac (test track) there is less grip and more drag.
+      const surf = this.s.surfaceGrip ? this.s.surfaceGrip(b.position.x, b.position.z) : 1;
+      this.lat = ls; this.offroad = surf < 1;
       let acc = 0;
       if (this.grounded) {
         const max = this.boosting ? spec.boostSpeed : spec.maxSpeed;
-        if (thr > 0 && fs < max) acc += thr * (spec.accel * (1 - Math.max(0, fs) / max) + 4);
+        if (thr > 0 && fs < max) acc += thr * (spec.accel * D.accelMul * (1 - Math.max(0, fs) / max) + 4);
         if (this.boosting && fs < max) acc += 14;
         if (brk > 0) { if (fs > 0.5) acc -= brk * 30; else if (fs > -14) acc -= brk * 12; }
         if (hb) acc -= clamp(fs * 0.8, -6, 6);
         if (thr === 0 && brk === 0) acc -= clamp(fs * 0.5, -2.5, 2.5);
         if (fs > max + 1) acc -= (fs - max) * 1.2;
-        acc -= clamp(Math.abs(ls) * 0.25, 0, 6) * Math.sign(fs); // sliding scrubs speed
+        acc -= clamp(Math.abs(ls) * D.slideScrub, 0, 6) * Math.sign(fs); // sliding scrubs speed
+        if (surf < 1) acc -= clamp(fs * 0.12, -4, 4);
         v.x += _f.x * acc * h; v.y += _f.y * acc * h; v.z += _f.z * acc * h;
 
         // Tyre grip: lateral velocity is removed at a limited rate (m/s²). Beyond it, the car slides.
-        const grip = (hb ? 7 : 30) * (this.boosting ? 0.9 : 1);
+        const grip = (hb ? D.hbGrip : D.grip) * (this.boosting ? 0.9 : 1) * surf;
         const cut = clamp(ls, -grip * h, grip * h);
         v.x -= _r.x * cut; v.y -= _r.y * cut; v.z -= _r.z * cut;
 
         // Yaw from a bicycle model (wheelbase), capped by what the grip can hold at this speed.
         const wb = this.v.kit.dims.L * 0.6;
-        const angle = this.steer * 0.6 / (1 + sp / 25);
+        const angle = this.steer * D.maxAngle / (1 + sp / D.angleFalloff);
         let yaw = -fs * Math.tan(angle) / wb;
-        const cap = ((hb ? 2.2 : 1.0) * 30) / Math.max(sp, 4);
+        const cap = ((hb ? D.hbYawCap : D.yawCap) * D.grip * surf) / Math.max(sp, 4);
         yaw = clamp(yaw, -cap, cap);
-        b.angularVelocity.y += (yaw - b.angularVelocity.y) * Math.min(1, (hb ? 5 : 8) * h);
+        b.angularVelocity.y += (yaw - b.angularVelocity.y) * Math.min(1, (hb ? D.yawResponse * 0.6 : D.yawResponse) * h);
         b.angularVelocity.x *= Math.exp(-4 * h);
         b.angularVelocity.z *= Math.exp(-4 * h);
         v.y -= 8 * h;
@@ -89,8 +94,9 @@ export class PlayerDriver {
 
       // Visual weight transfer: body rolls out of corners and pitches under throttle/brake.
       const latAcc = this.grounded ? fs * b.angularVelocity.y : 0;
-      this.roll += (clamp(latAcc * 0.004, -0.065, 0.065) - this.roll) * Math.min(1, 6 * h);
-      this.pitch += (clamp(-acc * 0.0025, -0.045, 0.045) - this.pitch) * Math.min(1, 6 * h);
+      this.latAcc = latAcc;
+      this.roll += (clamp(latAcc * D.roll, -0.065, 0.065) - this.roll) * Math.min(1, 6 * h);
+      this.pitch += (clamp(-acc * D.pitch, -0.045, 0.045) - this.pitch) * Math.min(1, 6 * h);
       this.v.model.rotation.set(this.pitch, 0, this.roll);
       this.v.steerVis = -this.steer * 0.5 / (1 + sp / 30);
     } else if (mode === 'after') {
