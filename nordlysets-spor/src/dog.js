@@ -381,22 +381,36 @@ export class Dog {
             }
         }
 
-        // Bevægelse
+        // Bevægelse: glidende fart (acceleration og opbremsning) og drejning, før hun for alvor sætter af sted
         let moveSpeed = 0;
-        if (speed > 0) {
-            const dx = tx - this.pos.x, dz = tz - this.pos.z;
-            const d = Math.hypot(dx, dz);
-            if (d > 0.01) {
-                const s = Math.min(speed, d / dt);
-                this.pos.x += dx / d * s * dt;
-                this.pos.z += dz / d * s * dt;
-                this.yaw = angleLerp(this.yaw, Math.atan2(dx, dz), Math.min(1, dt * 9));
-                moveSpeed = s;
-                this.energy = Math.max(0, this.energy - dt * (s > 5 ? 1.2 : 0.3));
+        this.v = this.v || 0;
+        if (this.state === 'harness') {
+            moveSpeed = this.harnessSpeed || 0;
+            this.v = 0;
+        } else {
+            let want = 0, dirYaw = this.yaw;
+            if (speed > 0) {
+                const dx = tx - this.pos.x, dz = tz - this.pos.z;
+                const d = Math.hypot(dx, dz);
+                if (d > 0.01) { dirYaw = Math.atan2(dx, dz); want = Math.min(speed, d * 5); }
+            }
+            const a = want > this.v ? 15 : 28;
+            this.v += Math.max(-a * dt, Math.min(a * dt, want - this.v));
+            // Drej med en rimelig vinkelhastighed; kør langsomt, mens hun endnu peger forkert
+            let diff = dirYaw - this.yaw;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const turnRate = this.v > 4.5 ? 5.0 : 9.0;
+            const step = Math.max(-turnRate * dt, Math.min(turnRate * dt, diff));
+            if (want > 0 || this.v > 0.3) { this.yaw += step; this.yawRate = step / Math.max(dt, 1e-3); } else this.yawRate = 0;
+            const align = want > 0 ? Math.max(0.2, Math.cos(Math.min(Math.abs(diff), 1.5))) : 1;
+            moveSpeed = this.v * align;
+            if (moveSpeed > 0.01) {
+                this.pos.x += Math.sin(this.yaw) * moveSpeed * dt;
+                this.pos.z += Math.cos(this.yaw) * moveSpeed * dt;
+                this.energy = Math.max(0, this.energy - dt * (moveSpeed > 5 ? 1.2 : 0.3));
             }
             G.collide(this.pos, 0.35);
-        } else if (this.state === 'harness') {
-            moveSpeed = this.harnessSpeed || 0;
         }
         if (lookAt && moveSpeed < 0.1) {
             this.yaw = angleLerp(this.yaw, Math.atan2(lookAt.x - this.pos.x, lookAt.z - this.pos.z), Math.min(1, dt * 5));
@@ -413,7 +427,21 @@ export class Dog {
         if (this.state === 'point' && this.announced && !this.dug) { this.dug = true; this.digT = 1.3; }
         if (this.state !== 'point') this.dug = false;
         const pant = moveSpeed > 4 || this.energy < 40 || this.state === 'beg' || this.state === 'happy';
-        this.animate(dt, moveSpeed, G, { lie, sit, sniff, pant, alert: this.state === 'guard' || this.state === 'point' ? 1 : 0 });
+        // Hun står et øjeblik, kigger sig om, og sætter sig først derefter
+        this.idleT = moveSpeed < 0.15 ? (this.idleT || 0) + dt : 0;
+        const sitEff = sit * Math.max(0, Math.min(1, (this.idleT - 0.6) / 0.8));
+        // Krop: læn ved acceleration, krængning i sving, hældning efter terrænet
+        const acc = (this.v - (this.vPrev ?? this.v)) / Math.max(dt, 1e-3);
+        this.vPrev = this.v;
+        this.accS = (this.accS || 0) + (acc - (this.accS || 0)) * Math.min(1, dt * 8);
+        const fx = Math.sin(this.yaw) * 0.55, fz = Math.cos(this.yaw) * 0.55;
+        const slope = (groundHeight(this.pos.x + fx, this.pos.z + fz) - groundHeight(this.pos.x - fx, this.pos.z - fz)) / 1.1;
+        this.pitchS = (this.pitchS || 0) + (-Math.atan(slope) * 0.8 - (this.pitchS || 0)) * Math.min(1, dt * 6);
+        this.animate(dt, moveSpeed, G, {
+            lie, sit: sitEff, sniff, pant, alert: this.state === 'guard' || this.state === 'point' ? 1 : 0,
+            lean: Math.max(-0.1, Math.min(0.1, this.accS * -0.006)), roll: Math.max(-0.22, Math.min(0.22, -(this.yawRate || 0) * 0.045)) * Math.min(1, moveSpeed / 3),
+            pitch: this.pitchS,
+        });
 
         this.root.position.copy(this.pos);
         this.root.rotation.y = this.yaw;
@@ -476,14 +504,18 @@ export class Dog {
         p.rear.rotation.x = -Math.sin(ph) * 0.12 * gal * amp;
         const bounce = (Math.abs(Math.sin(ph)) * 0.03 * (1 - gal) + Math.max(0, Math.sin(ph)) * 0.08 * gal) * amp;
         this.inner.position.y = -this.lie * 0.26 - this.sit * 0.05 + bounce;
-        this.inner.rotation.x = -this.sit * 0.38 + dig * 0.12;
-        this.inner.rotation.z = Math.sin(t * 42) * 0.45 * shake;
+        this.inner.rotation.x = -this.sit * 0.38 + dig * 0.12 + (o.lean || 0) + (o.pitch || 0) * (1 - this.lie);
+        const stand = Math.max(0, 1 - amp * 2.2) * (1 - this.lie) * (1 - this.sit);
+        this.seed = this.seed ?? Math.random() * 9;
+        this.inner.rotation.z = Math.sin(t * 42) * 0.45 * shake + (o.roll || 0) + Math.sin(t * 0.8 + this.seed) * 0.018 * stand;
 
         // Hoved, ører, tunge
         const breathe = Math.sin(t * (o.pant ? 9 : 2)) * (o.pant ? 0.03 : 0.015);
         p.head.rotation.x = this.sniff * (0.6 + Math.sin(t * 9) * 0.1) - this.sit * 0.15 + this.lie * 0.4
             - this.alert * 0.15 + Math.sin(ph * 2) * 0.08 * amp + breathe + dig * 0.4;
         p.head.rotation.z = Math.sin(t * 38) * 0.3 * shake;
+        // Når hun står stille, kigger hun sig om i stedet for at stå som frosset
+        p.head.rotation.y = (Math.sin(t * 0.55 + this.seed) * 0.3 + Math.sin(t * 0.23 + 1.3 + this.seed) * 0.16) * stand * (1 - this.alert);
         this.twitchT = (this.twitchT || 2) - dt;
         const twitch = this.twitchT < 0.15 ? 0.5 : 0;
         if (this.twitchT < 0) this.twitchT = 1.5 + Math.random() * 4;

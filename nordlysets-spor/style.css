@@ -128,7 +128,8 @@ button { font-family: inherit; color: inherit; }
     pointer-events: none; display: none;
 }
 #joy.ghost { display: block; opacity: .3; }
-#joy.on { display: block; opacity: 1; }
+#joy.on { display: block; opacity: 1; transition: none; }
+#joy.fade { display: block; opacity: 0; transition: opacity .7s ease; }
 #joy-knob {
     position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
     border-radius: 50%; background: rgba(255,255,255,.32); border: 1px solid rgba(255,255,255,.6);

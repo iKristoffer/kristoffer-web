@@ -69,7 +69,7 @@ float glint(vec3 wp, vec3 N, vec3 L, vec3 V, float density) {
     vec3 h = hash32(id);
     vec2 c = 0.2 + 0.6 * h.xy;
     float dpx = length((fract(g) - c) * cs) / uPx;
-    float spot = smoothstep(1.5, 0.25, dpx);
+    float spot = smoothstep(1.15, 0.2, dpx);
     if (spot <= 0.0) return 0.0;
     vec3 r = hash32(id + 19.19) * 2.0 - 1.0;
     vec3 mn = normalize(N * 0.7 + r);
@@ -153,10 +153,10 @@ float sastrugi(vec2 p, out vec2 grad) {
         vec3 d1 = uFire1.xyz - vWPos; float l1 = length(d1);
         gcol += uFireCol * glint(vWPos, gN, d1 / l1, Vv, 1.6) * uFire1.w / (1.0 + l1 * l1 * 0.3);
     }
-    outgoingLight += gcol * uGlint * gSnowy * 4.0;
+    outgoingLight += gcol * uGlint * gSnowy * 1.5;
     #include <opaque_fragment>`);
     };
-    mat.customProgramCacheKey = () => 'snow-v2';
+    mat.customProgramCacheKey = () => 'snow-v3';
     return mat;
 }
 

@@ -102,6 +102,47 @@ export function slopeAt(x, z) {
     return Math.hypot(dx, dz) / 1.2;
 }
 
+/**
+ * Biomer pr. zone: farver terrænets hjørner om til zonens udtryk, med en blød overgang ud over ringen.
+ * Kaldes efter at zonerne er placeret (terrænet bygges før).
+ */
+export const BIOMES = {
+    thin: { name: 'Tyndisen', base: '#273449', alt: '#3e5878', fleck: '#0c121c', freq: 0.5 },      // sort, revnet is
+    bird: { name: 'Fuglefjeldet', base: '#55575f', alt: '#7d7f86', fleck: '#f2eee2', lichen: '#d0832e', freq: 0.35 }, // gråt fjeld med fuglegødning og laver
+    pass: { name: 'Gletsjerpasset', base: '#6fb0e4', alt: '#b9defa', fleck: '#3f7fc0', freq: 0.28 }, // blå gletsjeris
+    peak: { name: 'Nordlysbjerget', base: '#3a3858', alt: '#524f78', fleck: '#2f9a74', freq: 0.22 },    // violet sten med grøn mos
+};
+export function applyBiomes(mesh, zones) {
+    const geo = mesh.geometry, p = geo.attributes.position, col = geo.attributes.color;
+    const c = new THREE.Color(), b = new THREE.Color(), t = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i);
+        for (const zn of zones) {
+            const bio = BIOMES[zn.id];
+            if (!bio) continue;
+            const d = Math.hypot(x - zn.x, z - zn.z);
+            const wgt = 1 - smoothstep(zn.R - 1, zn.R + 11, d);
+            if (wgt <= 0.01) continue;
+            const n1 = vnoise(x * bio.freq + 11, z * bio.freq - 4) * 0.5 + 0.5;
+            const n2 = vnoise(x * bio.freq * 3.1 - 7, z * bio.freq * 3.1 + 2) * 0.5 + 0.5;
+            b.set(bio.base).lerp(t.set(bio.alt), n1);
+            // Pletter: sprækker/guano/spalter/mos efter zonen
+            const fleckK = smoothstep(0.5, 0.7, n2);
+            if (fleckK > 0) b.lerp(t.set(bio.fleck), fleckK * (zn.id === 'thin' ? 0.85 : 0.7));
+            if (bio.lichen) b.lerp(t.set(bio.lichen), smoothstep(0.72, 0.9, vnoise(x * 0.9 + 3, z * 0.9 + 8) * 0.5 + 0.5) * 0.55);
+            if (zn.id === 'thin') {
+                // Revner: smalle mørke linjer, hvor to støjfelter krydser nul
+                const cr = Math.abs(vnoise(x * 0.9, z * 0.9));
+                if (cr < 0.05) b.lerp(t.set('#05080e'), 1 - cr / 0.05);
+            }
+            c.fromBufferAttribute(col, i);
+            c.lerp(b, Math.min(1, wgt * 1.15));
+            col.setXYZ(i, c.r, c.g, c.b);
+        }
+    }
+    col.needsUpdate = true;
+}
+
 export function buildTerrain() {
     for (let iz = 0; iz <= SEG; iz++) {
         for (let ix = 0; ix <= SEG; ix++) {

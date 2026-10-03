@@ -389,5 +389,254 @@ export function buildDressing({ scene, W, world, colliders, rng, zones, camp, is
         }
     }
 
+
+    // =====================================================================================================
+    // Pas 2: ruiner, både, trykryg, klitter, spor og dyr
+    // =====================================================================================================
+    const boneMat = lam('#e8dfca'), stoneMat = lam('#7a7e87'), turf = lam('#6f6a4a'), woodMat = lam('#6b4c2e');
+
+    // --- Qarmaq-ruiner: gamle tørvehuse med hvalribben som tagspær (Thule-kultur) -------------------------
+    {
+        const stones = inst(new THREE.DodecahedronGeometry(0.5, 0), lam('#ffffff'), Math.round(260 * k));
+        const sc = [c('#858992'), c('#6e727b'), c('#9a9ca2')];
+        const arch = inst(new THREE.TorusGeometry(1, 0.06, 5, 12, Math.PI), boneMat, 40);
+        for (let n = 0; n < Math.round(4 * k); n++) {
+            const s0 = placeAt((h, x, z) => land(h, x, z) && h < 3.5, 0, 0, 14, 92, 5);
+            if (!s0) continue;
+            const rot = rng() * TAU, a1 = 2.1, b1 = 1.5;
+            // Oval stenmur med åbning mod en tunnel
+            for (let i = 0; i < 26; i++) {
+                const t = (i / 26) * TAU;
+                if (Math.abs(Math.sin(t - rot * 0.2)) < 0.12 && Math.cos(t - rot * 0.2) > 0) continue;
+                const x = s0.x + Math.cos(t) * a1, z = s0.z + Math.sin(t) * b1;
+                const sz = 0.38 + rng() * 0.26;
+                put(stones, x, gy(x, z) + sz * 0.3, z, rng() * TAU, sz, sz * (0.7 + rng() * 0.3), sz, sc[Math.floor(rng() * 3)], (rng() - 0.5) * 0.4, (rng() - 0.5) * 0.4);
+            }
+            // Tagspær af hvalribben, falden delvist sammen
+            const cnt = 2 + Math.floor(rng() * 2);
+            for (let i = 0; i < cnt; i++) {
+                const off = (i - (cnt - 1) / 2) * 0.9, sz = 1.0 + rng() * 0.4;
+                put(arch, s0.x + off, gy(s0.x, s0.z) + 0.05, s0.z + (rng() - 0.5) * 0.4, rng() < 0.5 ? 0 : Math.PI / 2, sz, sz, sz, null, (rng() - 0.5) * 0.3, (rng() - 0.5) * 0.3);
+            }
+            colliders.push({ x: s0.x, z: s0.z, r: 2.2, active: true });
+            // Sodet gulv: mørk skive
+            const floor = new THREE.Mesh(new THREE.CircleGeometry(1.5, 12).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#3b3226', transparent: true, opacity: 0.55 }));
+            floor.scale.set(1.3, 1, 0.95);
+            floor.position.set(s0.x, gy(s0.x, s0.z) + 0.05, s0.z);
+            scene.add(floor);
+        }
+        finish(stones); finish(arch);
+        scene.add(stones, arch);
+    }
+
+    // --- Umiaker: strandede skindbåde på bukke ---------------------------------------------------------------
+    for (let n = 0; n < Math.round(3 * k); n++) {
+        const s0 = placeAt(shore, 0, 0, 25, 100, 4);
+        if (!s0) continue;
+        const g = new THREE.Group();
+        const hull = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, TAU, 0, Math.PI / 2).rotateX(Math.PI), lam('#9b7a52'));
+        hull.scale.set(3.2, 0.9, 1.1);
+        hull.position.y = 1.1;
+        hull.castShadow = true;
+        g.add(hull);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 4, 20).rotateX(Math.PI / 2), woodMat);
+        rim.scale.set(3.2, 1, 1.1);
+        rim.position.y = 1.1;
+        g.add(rim);
+        for (const sx of [-1.4, 1.4]) {
+            const a = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 1.1), woodMat);
+            a.position.set(sx, 0.5, 0);
+            g.add(a);
+        }
+        g.position.set(s0.x, gy(s0.x, s0.z), s0.z);
+        g.rotation.y = rng() * TAU;
+        scene.add(g);
+        colliders.push({ x: s0.x, z: s0.z, r: 1.6, active: true });
+    }
+
+    // --- Trykryg: lange rækker af opskudte isflager langs havets kant -------------------------------------------
+    {
+        const m = inst(new THREE.BoxGeometry(1, 1, 0.45), lam('#ffffff', { transparent: true, opacity: 0.93 }), Math.round(220 * k));
+        const ice = [c('#cfe6f7'), c('#b3d4ee'), c('#e4f1fb'), c('#a3c9ea')];
+        for (let n = 0; n < Math.round(9 * k); n++) {
+            const s0 = placeAt((h) => h < -0.6 && h > -2.3, 0, 0, 30, 98, 3);
+            if (!s0) continue;
+            const dir = rng() * TAU, len = 6 + Math.floor(rng() * 8);
+            for (let i = 0; i < len; i++) {
+                const x = s0.x + Math.cos(dir) * i * 1.2 + (rng() - 0.5) * 0.6, z = s0.z + Math.sin(dir) * i * 1.2 + (rng() - 0.5) * 0.6;
+                if (Math.hypot(x, z) > W.WORLD_RADIUS - 2) continue;
+                const h = 0.7 + rng() * 1.6, w = 0.9 + rng() * 1.2;
+                put(m, x, gy(x, z) + h * 0.4, z, dir + Math.PI / 2 + (rng() - 0.5) * 0.5, w, h, 1, ice[Math.floor(rng() * 4)], (rng() - 0.5) * 0.5, (rng() - 0.5) * 0.7);
+            }
+        }
+        finish(m);
+        scene.add(m);
+    }
+
+    // --- Snedriver: bløde, vindformede klitter, der bryder fladen --------------------------------------------------
+    {
+        const m = inst(new THREE.SphereGeometry(1, 10, 6, 0, TAU, 0, Math.PI / 2), lam('#f1f6fb'), Math.round(110 * k));
+        m.castShadow = false;
+        for (let n = 0; n < Math.round(110 * k); n++) {
+            const s0 = placeAt((h, x, z) => land(h, x, z) && h < 5, 0, 0, 3, 96, 1);
+            if (!s0) continue;
+            const L = 2.2 + rng() * 3.4, Wd = 0.8 + rng() * 1.1, H = 0.18 + rng() * 0.32;
+            put(m, s0.x, gy(s0.x, s0.z) - 0.05, s0.z, 0.9 + (rng() - 0.5) * 0.35, L, H, Wd, null);   // alle ligger i vindens retning
+        }
+        finish(m);
+        scene.add(m);
+    }
+
+    // --- Spor: slædespor fra lejren mod passet, og rævespor på kryds og tværs -------------------------------------------
+    {
+        const dash = inst(new THREE.PlaneGeometry(0.12, 0.7).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d8795', transparent: true, opacity: 0.55, depthWrite: false }), Math.round(420 * k));
+        dash.castShadow = false; dash.receiveShadow = false;
+        if (camp) {
+            const gate = { x: W.SPAWN.x - 0.7 * 46 * 0.7, z: W.SPAWN.z - 0.7 * 46 * 0.7 };   // omtrent mod passet
+            const tx = gate.x - camp.x, tz = gate.z - camp.z, L = Math.hypot(tx, tz), ux = tx / L, uz = tz / L;
+            for (const side of [-0.45, 0.45]) {
+                for (let d = 3; d < L - 4; d += 0.95) {
+                    const wob = Math.sin(d * 0.13 + side) * 1.6;
+                    const x = camp.x + ux * d - uz * (side + wob), z = camp.z + uz * d + ux * (side + wob);
+                    if (W.groundHeight(x, z) < 0.2) continue;
+                    put(dash, x, gy(x, z) + 0.04, z, Math.atan2(ux, uz) + wob * 0.01, 1, 1, 1, null);
+                }
+            }
+        }
+        // Rævespor: to rækker af pote-aftryk
+        const paw = inst(new THREE.CircleGeometry(0.07, 6).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#6c7584', transparent: true, opacity: 0.5, depthWrite: false }), Math.round(500 * k));
+        paw.castShadow = false; paw.receiveShadow = false;
+        for (let n = 0; n < Math.round(14 * k); n++) {
+            const s0 = placeAt(land, 0, 0, 6, 94, 1);
+            if (!s0) continue;
+            const dir = rng() * TAU;
+            for (let i = 0; i < 26; i++) {
+                const x = s0.x + Math.cos(dir) * i * 0.34 + Math.sin(dir) * (i % 2 ? 0.07 : -0.07) + Math.sin(i * 0.2) * 0.4, z = s0.z + Math.sin(dir) * i * 0.34 - Math.cos(dir) * (i % 2 ? 0.07 : -0.07) + Math.cos(i * 0.2) * 0.4;
+                if (W.groundHeight(x, z) < 0.1) break;
+                put(paw, x, gy(x, z) + 0.035, z, 0, 1, 1, 1, null);
+            }
+        }
+        finish(dash); finish(paw);
+        scene.add(dash, paw);
+    }
+
+    // --- Naturlige stenbuer: orienteringspunkter ------------------------------------------------------------------------
+    {
+        const geo = rockGeo(rng);
+        const m = inst(geo, lam('#ffffff'), 30);
+        const cap = inst(geo, lam('#f4f8fc'), 30);
+        for (let n = 0; n < Math.round(4 * k); n++) {
+            const s0 = placeAt((h, x, z) => land(h, x, z) && h < 4, 0, 0, 14, 90, 5);
+            if (!s0) continue;
+            const rot = rng() * TAU, dx = Math.cos(rot), dz = Math.sin(rot);
+            const col = c('#6a6e77');
+            for (const sg of [-1, 1]) {
+                const x = s0.x + dx * 1.7 * sg, z = s0.z + dz * 1.7 * sg;
+                put(m, x, gy(x, z) + 1.5, z, rng() * TAU, 1.2, 2.2, 1.2, col);
+                put(cap, x, gy(x, z) + 3.1, z, rng() * TAU, 1.0, 0.45, 1.0, null);
+                colliders.push({ x, z, r: 1.1, active: true });
+            }
+            put(m, s0.x, gy(s0.x, s0.z) + 3.1, s0.z, rot, 2.5, 0.9, 1.0, col);          // overligger
+            put(cap, s0.x, gy(s0.x, s0.z) + 3.8, s0.z, rot, 2.2, 0.35, 0.9, null);
+        }
+        finish(m); finish(cap);
+        scene.add(m, cap);
+    }
+
+    // --- Dyr: ræve, rypeflokke og sneugler ----------------------------------------------------------------------------------
+    {
+        const white = lam('#f4f4f1'), grey = lam('#bdbdb8'), dark = new THREE.MeshBasicMaterial({ color: '#111' });
+        const foxes = [];
+        for (let i = 0; i < Math.round(4 * k); i++) {
+            const s0 = placeAt(land, 0, 0, 10, 90, 2);
+            if (!s0) continue;
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), white); body.scale.set(1, 0.7, 1.7); body.position.y = 0.32;
+            const head = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 5).rotateX(Math.PI / 2), white); head.position.set(0, 0.42, 0.55);
+            const e1 = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 4), grey), e2 = e1.clone(); e1.position.set(-0.07, 0.58, 0.45); e2.position.set(0.07, 0.58, 0.45);
+            const tail = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 5), white); tail.scale.set(0.8, 0.8, 2.4); tail.position.set(0, 0.34, -0.7);
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), dark); nose.position.set(0, 0.42, 0.78);
+            const legs = [[-0.12, 0.3], [0.12, 0.3], [-0.12, -0.3], [0.12, -0.3]].map(([x, z]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 4), grey); l.position.set(x, 0.15, z); g.add(l); return l; });
+            g.add(body, head, e1, e2, tail, nose);
+            g.castShadow = true;
+            g.position.set(s0.x, gy(s0.x, s0.z), s0.z);
+            scene.add(g);
+            foxes.push({ g, legs, tail, x: s0.x, z: s0.z, tx: s0.x, tz: s0.z, yaw: rng() * TAU, wait: rng() * 4, spd: 0 });
+        }
+        tick.push((dt, time, px, pz) => {
+            for (const f of foxes) {
+                const dP = Math.hypot(f.x - px, f.z - pz);
+                f.wait -= dt;
+                if (dP < 8) { const a = Math.atan2(f.x - px, f.z - pz); f.tx = f.x + Math.sin(a) * 12; f.tz = f.z + Math.cos(a) * 12; f.wait = 0; f.spd = 7.5; }
+                else if (f.wait <= 0 && Math.hypot(f.tx - f.x, f.tz - f.z) < 1) {
+                    const a = rng() * TAU, d = 6 + rng() * 14;
+                    f.tx = f.x + Math.cos(a) * d; f.tz = f.z + Math.sin(a) * d;
+                    f.wait = 2 + rng() * 6; f.spd = 2.2;
+                }
+                const dx = f.tx - f.x, dz = f.tz - f.z, d = Math.hypot(dx, dz);
+                let moving = 0;
+                if (d > 0.5 && (f.wait <= 0 || dP < 8)) {
+                    const nx = f.x + dx / d * f.spd * dt, nz = f.z + dz / d * f.spd * dt;
+                    if (Math.hypot(nx, nz) < W.WORLD_RADIUS - 3 && W.groundHeight(nx, nz) > 0.1) { f.x = nx; f.z = nz; moving = f.spd; }
+                    else { f.tx = f.x; f.tz = f.z; }
+                    f.yaw += (Math.atan2(dx, dz) - f.yaw + (Math.abs(Math.atan2(dx, dz) - f.yaw) > Math.PI ? TAU * Math.sign(f.yaw - Math.atan2(dx, dz)) : 0)) * Math.min(1, dt * 6);
+                }
+                f.g.position.set(f.x, gy(f.x, f.z), f.z);
+                f.g.rotation.y = f.yaw;
+                const ph = time * moving * 3;
+                f.legs.forEach((l, i) => { l.rotation.x = Math.sin(ph + (i % 2 ? Math.PI : 0)) * 0.7 * Math.min(1, moving / 2); });
+                f.tail.rotation.y = Math.sin(time * 3 + f.x) * 0.2;
+            }
+        });
+
+        // Rypeflokke: små hvide fugle, der trippe og letter i flok
+        const ptarm = new THREE.MeshLambertMaterial({ color: '#f6f6f2', flatShading: true });
+        const flocks = [];
+        for (let n = 0; n < Math.round(5 * k); n++) {
+            const s0 = placeAt((h, x, z) => land(h, x, z) && h < 4, 0, 0, 10, 90, 3);
+            if (!s0) continue;
+            const birds = [];
+            for (let i = 0; i < 4 + Math.floor(rng() * 3); i++) {
+                const b = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), ptarm);
+                b.scale.set(1, 0.85, 1.3);
+                const hd = new THREE.Mesh(new THREE.SphereGeometry(0.06, 5, 4), ptarm); hd.position.set(0, 0.1, 0.13);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.015, 3, 3), dark); eye.position.set(0.04, 0.12, 0.17);
+                b.add(hd, eye);
+                const ox = (rng() - 0.5) * 2.4, oz = (rng() - 0.5) * 2.4;
+                b.position.set(s0.x + ox, gy(s0.x + ox, s0.z + oz) + 0.1, s0.z + oz);
+                b.rotation.y = rng() * TAU;
+                scene.add(b);
+                birds.push({ b, ox, oz, hop: rng() * 6 });
+            }
+            flocks.push({ s0, birds, state: 'ground', t: 0, dir: 0 });
+        }
+        tick.push((dt, time, px, pz) => {
+            for (const f of flocks) {
+                const d = Math.hypot(f.s0.x - px, f.s0.z - pz);
+                f.t += dt;
+                if (f.state === 'ground') {
+                    for (const bd of f.birds) {
+                        bd.hop += dt;
+                        const h = Math.max(0, Math.sin(bd.hop * 5 + bd.ox * 3)) ** 8 * 0.06;
+                        bd.b.position.y = gy(bd.b.position.x, bd.b.position.z) + 0.1 + h;
+                    }
+                    if (d < 6) { f.state = 'fly'; f.t = 0; f.dir = Math.atan2(f.s0.x - px, f.s0.z - pz) + (rng() - 0.5) * 0.8; }
+                } else if (f.state === 'fly') {
+                    for (const bd of f.birds) {
+                        bd.b.position.x += Math.sin(f.dir) * 8 * dt;
+                        bd.b.position.z += Math.cos(f.dir) * 8 * dt;
+                        bd.b.position.y += (f.t < 1.4 ? 2.2 : -1.0) * dt;
+                        bd.b.rotation.y = f.dir;
+                        bd.b.scale.y = 0.85 + Math.sin(time * 40) * 0.25;
+                    }
+                    if (f.t > 4) { f.state = 'away'; f.t = 0; for (const bd of f.birds) bd.b.visible = false; }
+                } else if (f.t > 30 && d > 16) {
+                    for (const bd of f.birds) { bd.b.visible = true; bd.b.scale.y = 0.85; bd.b.position.set(f.s0.x + bd.ox, gy(f.s0.x + bd.ox, f.s0.z + bd.oz) + 0.1, f.s0.z + bd.oz); }
+                    f.state = 'ground'; f.t = 0;
+                }
+            }
+        });
+    }
+
     return { update: (dt, time, px, pz) => { for (const f of tick) f(dt, time, px, pz); } };
 }

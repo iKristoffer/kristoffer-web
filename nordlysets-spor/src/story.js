@@ -56,6 +56,7 @@ export const RECIPE_HINTS = {
     sled2: 'Hundekøreren ved, hvordan man gør slæden stærkere – hvis Siku stoler på dig.',
     axe: 'Noget til at hugge i is. Ittu gemte tegningen i jorden – Siku kan lugte den.',
     axe2: 'En skarpere økse til tyk is. Den unge fangers far lavede en.',
+    lantern: 'En lampe, man kan bære ved hoften. Ukaleq kender den, når du har lært den gamle lampe.',
     cleats: 'Tænder under sålen til stejl is. Ittu gemte tegningen et sted, hvor kun hunde kommer ind.',
 };
 
@@ -252,6 +253,7 @@ function hub(c) {
     if (S.q.needle <= 3) {
         options.push({ label: S.q.needle === 0 ? 'Kan du lære mig at sy?' : 'Om syning (kamikker, anorak, lampe)', act: () => needle(c) });
     }
+    if (S.q.needle >= 4 && !c.known('lantern')) options.push({ label: 'Kan man have en lampe med sig?', act: () => lanternTalk(c) });
     if (S.q.ittu === 0) options.push({ label: 'Fortæl mig om Ittus gemmer', act: () => ittuOffer(c) });
     else if (S.q.ittu <= 3) options.push({ label: 'Om Ittus gemmer', act: () => ittu(c) });
     if (S.q.ittu >= 4 && S.q.needle >= 4 && S.q.needle <= 5) options.push({ label: 'Ittus måde at sy på', act: () => ittuSewing(c) });
@@ -350,6 +352,17 @@ function needle(c) {
             };
         }
     }
+}
+
+// ---- Rejselampen ---------------------------------------------------------------------------------------
+function lanternTalk(c) {
+    return {
+        lines: [
+            'En lampe, man bærer? Det gjorde jeg som ung, når vi gik langs kysten i mørketiden. Du tager en lille stenskål, spæk og en væge af mos – og bygger en skærm af skind omkring, så vinden ikke tager den.',
+            'Den hænger ved hoften og lyser, når mørket kommer. Men den drikker spæk, ligesom alt der varmer. Og skærmen revner, hvis du er hård ved den – sener og et stykke skind, så er den hel igen.',
+        ],
+        options: [{ label: 'Vis mig, hvordan den laves', act: () => { c.learn('lantern'); return { lines: ['Så. To sten, to spæk, et skind og en knogle til hanken. Det er det hele.'], options: [{ label: 'Tak', act: () => hub(c) }] }; } }, { label: 'Tilbage', act: () => hub(c) }],
+    };
 }
 
 // ---- Ittus gemmer: bro mellem Siku, zonerne og Ukaleqs historie ----------------------------------

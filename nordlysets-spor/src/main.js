@@ -32,7 +32,8 @@ const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 420);
 const CAM_OFF = new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(90);
 const ZOOMS = [15, 21, 29];
 let zoomIdx = isTouch && innerWidth < innerHeight ? 0 : 1;
-let viewH = 21, pxPerUnit = 30;
+let viewH = 21, pxPerUnit = 30, pxStable = 30, pxHold = 30, zoomDiff = 0;   // pxStable: pixel/enhed ved det zoom-trin, vi glider mod (holder glimt-gitteret stille under zoom-animationen)
+let zoomCur = ZOOMS[zoomIdx];   // det zoom-niveau, kameraet faktisk har lige nu; glider mod ZOOMS[zoomIdx]
 
 const hemi = new THREE.HemisphereLight(0xdfefff, 0x8aa0b8, 0.7);
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -88,11 +89,11 @@ const S = {
     t: 0.66, day: 1, time: 0, paused: true, started: false, over: false, won: false,
     health: 100, warmth: 100, food: 85,
     inv: { wood: 3, stone: 1, bone: 0, snow: 0, hide: 0, sinew: 0, brand: 0, meat: 0, cooked: 0, blubber: 0, berries: 1 },
-    has: { harpoon: false, knife: false, kamik: false, anorak: false, sled: false, axe: false, cleats: false }, // virker lige nu (ikke itu)
+    has: { harpoon: false, knife: false, kamik: false, anorak: false, sled: false, axe: false, cleats: false, lantern: false }, // virker lige nu (ikke itu)
     owned: {}, dur: {}, equip: {}, // lavet engang / holdbarhed tilbage / hvilken variant pr. slot                                                               // lavet engang / holdbarhed tilbage
     known: new Set(['fire', 'torch', 'tinder', 'knife', 'harpoon', 'igloo', 'sled']), // kendte opskrifter (resten læres: se src/story.js)
     q: { map: 0, needle: 0, ittu: 0, nuka: 0, pavia: 0, qillaq: 0 }, stats: { seals: 0, hares: 0 }, flags: {}, found: {}, hasMap: false, control: 'player',
-    home: false, homeIgloo: null, chest: {}, bench: false,                                                // quest-linjer: trin pr. linje
+    home: false, homeIgloo: null, chest: {}, bench: false, lanternOff: false, lanternLit: false,                                                // quest-linjer: trin pr. linje
     storm: 0, snowAmt: 0.12, weather: 'clear', wTimer: 130, nextStorm: false, warned: false,
     windAngle: 0.6, wind: new THREE.Vector3(1, 0, 0),
     aurora: 0, auroraTarget: 0.8, auroraRetarget: 10, aTime: 0, burst: 0, burstDone: false, auroraNight: false, dryNights: 0,
@@ -122,6 +123,7 @@ const GEAR = {
     sled: { unit: 's kørsel', fix: { wood: 2, sinew: 1 } },
     axe: { unit: 'slag', fix: { stone: 1, bone: 1, sinew: 1 } },
     cleats: { unit: 's på is', fix: { bone: 1, sinew: 1 } },
+    lantern: { unit: 's lys', fix: { blubber: 1, sinew: 1 } },
 };
 const EAT_ORDER = ['cooked', 'meat', 'berries', 'blubber'];
 
@@ -145,6 +147,7 @@ const RECIPES = [
     { id: 'sled2', slot: 'sled', tier: 2, name: 'Forstærket slæde', icon: '🛷', desc: 'Knoglemeiere og sene-bindinger. Hurtigere og holder længere.', cost: { wood: 5, bone: 3, sinew: 3 }, st: { max: 480, speed: 2.0 } },
     { id: 'axe', slot: 'axe', tier: 1, name: 'Stenøkse', icon: '🪓', desc: 'Hugger i is og snedriver.', cost: { stone: 2, wood: 2, bone: 1, sinew: 1 }, st: { max: 25, power: 1 } },
     { id: 'axe2', slot: 'axe', tier: 2, name: 'Isøkse med knoglekant', icon: '🪓', desc: 'Skarp kant af knogle. Halv tid ved en isvæg.', cost: { stone: 2, wood: 1, bone: 3, sinew: 2 }, st: { max: 40, power: 2 } },
+    { id: 'lantern', slot: 'lantern', tier: 1, name: 'Rejselampe', icon: '🏮', desc: 'En lille spæklampe i en skærm af skind. Hænger ved hoften og lyser, når det bliver mørkt – så længe der er spæk på.', cost: { stone: 2, blubber: 2, hide: 1, bone: 1 }, st: { max: 300, light: 1, warm: 1 } },
     { id: 'cleats', slot: 'cleats', tier: 1, name: 'Isbrodder', icon: '🦶', desc: 'Knogletænder under sålen. Giver fodfæste på stejl is og klippe.', cost: { bone: 3, sinew: 2, hide: 1 }, st: { max: 200 } },
 ];
 const RBY = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
@@ -154,7 +157,7 @@ const stat = (slot, key, dflt = 0) => (S.has[slot] ? cur(slot).st[key] ?? dflt :
 const STAT_LABEL = (st) => [
     st.max && `⏱ ${st.max}`, st.insul && `🔥 −${Math.round(st.insul * 100)}% kulde`, st.speed && `⚡ ×${st.speed}`,
     st.hit && `🎯 +${Math.round(st.hit * 100)}%`, st.range && `↔ ×${st.range}`, st.power && `⛏ ${st.power}/slag`,
-    st.storm && `🌬 −${Math.round(st.storm * 100)}% modvind`,
+    st.storm && `🌬 −${Math.round(st.storm * 100)}% modvind`, st.light && '💡 lys i mørket',
 ].filter(Boolean).join(' · ');
 
 const JOURNAL = [
@@ -179,6 +182,28 @@ const player = makePlayerRig();
 const anim = new PlayerAnimator(player);
 scene.add(player.group);
 const pBlob = W.makeBlob(1.3, 0.35);
+// Rejselampen: hænger ved højre hofte; lyset følger spilleren og tændes automatisk i mørke
+const lantern = new THREE.Group();
+{
+    const stoneM = new THREE.MeshLambertMaterial({ color: '#6b6f78', flatShading: true });
+    const shade = new THREE.MeshLambertMaterial({ color: '#f0dcae', emissive: '#a8651c', emissiveIntensity: 0.15, transparent: true, opacity: 0.88, flatShading: true });
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.07, 8), stoneM);
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, 0.17, 8, 1, true), shade);
+    sh.position.y = 0.12; sh.material.side = THREE.DoubleSide;
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.07, 8), stoneM);
+    cap.position.y = 0.24;
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 4, 10, Math.PI), new THREE.MeshLambertMaterial({ color: '#e8dfca' }));
+    handle.position.y = 0.26;
+    const glow = W.makeGlow('#ffb45a', 1.1, 0);
+    glow.position.y = 0.13;
+    const light = new THREE.PointLight(0xffb060, 0, 13, 1.7);
+    light.position.y = 0.2;
+    lantern.add(bowl, sh, cap, handle, glow, light);
+    lantern.position.set(0.4, 0.62, 0.08);
+    lantern.visible = false;
+    lantern.userData = { glow, light, shade, k: 0 };
+}
+player.group.add(lantern);
 scene.add(pBlob);
 const P = {
     pos: player.group.position,
@@ -304,9 +329,13 @@ const hl = (() => {
         g.fill();
         g.restore();
     }
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({
-        map: new THREE.CanvasTexture(cv), color: '#ffbf3a', transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+    // Ringen er et net, der lægges ned over terrænet hvert billede (se updateHighlight) og dybdetestes, så ting kan stå over og under den
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 22, 22).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(cv), color: '#ffbf3a', transparent: true, opacity: 0, depthWrite: false, depthTest: true,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     }));
+    m.geometry.userData.base = m.geometry.attributes.position.array.slice();
+    m.frustumCulled = false;
     m.renderOrder = 4;
     return { m, get: null, r: 1, op: 0, pos: new THREE.Vector3() };
 })();
@@ -356,6 +385,21 @@ function updateHighlight(dt) {
     hl.m.rotation.y = S.time * 0.6;
     hl.m.material.opacity = hl.op * (0.8 + Math.sin(S.time * 5) * 0.15);
     hl.m.visible = hl.op > 0.01;
+    // Læg ringen ned på jorden: hvert hjørne følger terrænets højde (i verdens-koordinater), så skråninger ikke skærer den over
+    if (hl.m.visible && !S.home) {
+        const pos = hl.m.geometry.attributes.position, base = hl.m.geometry.userData.base;
+        const sc = hl.m.scale.x, cy = Math.cos(hl.m.rotation.y), sy = Math.sin(hl.m.rotation.y), ox = hl.m.position.x, oz = hl.m.position.z, oy = hl.m.position.y;
+        for (let i = 0; i < pos.count; i++) {
+            const lx = base[i * 3] * sc, lz = base[i * 3 + 2] * sc;
+            const wx = ox + lx * cy + lz * sy, wz = oz - lx * sy + lz * cy;
+            pos.setY(i, (Math.max(0, W.groundHeight(wx, wz)) + 0.07 - oy) / sc);
+        }
+        pos.needsUpdate = true;
+    } else if (hl.m.visible) {
+        const pos = hl.m.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) pos.setY(i, 0);
+        pos.needsUpdate = true;
+    }
 }
 
 const heaters = []; // bål + lamper + fakler
@@ -722,6 +766,7 @@ let rope = null;     // rebet i Tyndisen
     });
 }
 
+W.applyBiomes(terrain, zones);
 const home = buildHome();
 const dressing = buildDressing({ scene, W, world, colliders, rng: W.mulberry32(5150), zones, camp: world.camp, isTouch });
 
@@ -1056,6 +1101,7 @@ addEventListener('keydown', (e) => {
     if (e.code === 'KeyC') togglePanel('panel-craft');
     if (e.code === 'KeyM') toggleMap();
     if (e.code === 'KeyQ') toggleControl();
+    if (e.code === 'KeyL') { S.lanternOff = !S.lanternOff; toast(S.lanternOff ? '🏮 Rejselampen er slukket.' : '🏮 Rejselampen tænder af sig selv i mørke.'); }
     if (e.code === 'KeyI' || e.code === 'Tab') { togglePanel('panel-inv'); e.preventDefault(); }
     if (e.code === 'KeyF') eatBest();
     if (e.code === 'Escape') closePanels();
@@ -1068,12 +1114,20 @@ addEventListener('keyup', (e) => {
 const joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
 const joyEl = $('joy'), knobEl = $('joy-knob');
 const JOY_R = 55;
+let joyFadeT = 0;
+/** Styre-ringen forsvinder igen, kort efter at man har sluppet; en blød hjælpering vises kun lige ved start på touch. */
+function fadeJoySoon(ms) {
+    clearTimeout(joyFadeT);
+    joyFadeT = setTimeout(() => { if (joy.id === null) joyEl.className = 'fade'; }, ms);
+}
 function ghostJoy() {
     if (!isTouch || !S.started) return;
     joyEl.className = 'ghost';
     joyEl.style.left = '90px';
     joyEl.style.top = (innerHeight - 110) + 'px';
     knobEl.style.transform = '';
+    fadeJoySoon(S.joyHinted ? 0 : 6000);
+    S.joyHinted = true;
 }
 const canvas = renderer.domElement;
 canvas.addEventListener('pointerdown', (e) => {
@@ -1083,6 +1137,7 @@ canvas.addEventListener('pointerdown', (e) => {
     joy.ox = e.clientX;
     joy.oy = e.clientY;
     joy.x = joy.y = 0;
+    clearTimeout(joyFadeT);
     joyEl.className = 'on';
     joyEl.style.left = e.clientX + 'px';
     joyEl.style.top = e.clientY + 'px';
@@ -1102,7 +1157,8 @@ const joyEnd = (e) => {
     if (e.pointerId !== joy.id) return;
     joy.id = null;
     joy.x = joy.y = 0;
-    ghostJoy();
+    knobEl.style.transform = '';
+    fadeJoySoon(1100);   // ringen bliver et øjeblik, så man kan se, hvor man slap, og fader så ud
 };
 canvas.addEventListener('pointerup', joyEnd);
 canvas.addEventListener('pointercancel', joyEnd);
@@ -1569,6 +1625,7 @@ const talkCtx = {
         exploreMap.reveal(P.pos.x, P.pos.z, 22);
         toast('🗺 Du fik et kort! Åbn det med 🗺 eller M – det fyldes ud, mens du udforsker.');
     },
+    known: (id) => S.known.has(id),
     learn: (id) => {
         S.known.add(id);
         const r = RECIPES.find((x) => x.id === id);
@@ -1673,6 +1730,7 @@ function craft(r) {
 const ORIG = { boots: player.mats.boots.color.clone(), coat: player.mats.coat.color.clone(), pants: player.mats.pants.color.clone() };
 function applyGear() {
     player.harpoon.visible = S.has.harpoon;
+    lantern.visible = S.has.lantern;
     player.mats.boots.color.copy(ORIG.boots);
     player.mats.coat.color.copy(ORIG.coat);
     player.mats.pants.color.copy(ORIG.pants);
@@ -2517,6 +2575,20 @@ function updateProjectiles(dt) {
     }
 }
 
+/** Rejselampen tænder af sig selv, når det bliver mørkt, og slukker ved dagslys. Den bruger spæk (holdbarhed) og varmer en smule. */
+function updateLantern(dt) {
+    const u = lantern.userData;
+    const dark = S.night > 0.35 || S.storm > 0.55;
+    const want = S.has.lantern && !S.home && !S.lanternOff && dark;
+    S.lanternLit = want;
+    if (want) wear('lantern', dt);
+    u.k += ((S.lanternLit ? 1 : 0) - u.k) * Math.min(1, dt * 3.5);
+    const fk = 1 + Math.sin(S.time * 14) * 0.07 + Math.sin(S.time * 23.7) * 0.05;
+    u.light.intensity = 6.5 * u.k * fk * (0.7 + S.night * 0.5);
+    u.glow.material.opacity = 0.65 * u.k;
+    u.shade.emissiveIntensity = 0.15 + 1.5 * u.k;
+}
+
 function updateSurvival(dt) {
     if (S.home) {
         S.sheltered = true;
@@ -2532,6 +2604,7 @@ function updateSurvival(dt) {
         const R = h.kind === 'fire' ? 6 : h.kind === 'torch' ? 3.2 : 4.5;
         if (d < R) heat += (1 - d / R) * (h.kind === 'fire' ? 9 : h.kind === 'torch' ? 2.5 : 5);
     }
+    if (S.lanternLit) heat += 1.2;
     S.sheltered = igloos.some((i) => dist2(i, P.pos.x, P.pos.z) < 2.0);
     if (S.storm > 0.3 && !S.sheltered) wear('anorak', dt * S.storm);
     const dogWarm = siku.state === 'warm' && siku.lie > 0.7 ? 0.5 : 0;
@@ -2704,6 +2777,9 @@ function updateVisuals(dt) {
     }
     const zoomGoal = S.home ? 0.72 : S.has.sled && P.speed > 3 ? 1.15 : 1;
     zoomMul += (zoomGoal - zoomMul) * Math.min(1, dt * 1.2);
+    // Zoom-trin glider (eksponentielt, ~0,4 s) i stedet for at hoppe
+    const zt = ZOOMS[zoomIdx];
+    zoomCur = Math.abs(zt - zoomCur) < 0.01 ? zt : zoomCur + (zt - zoomCur) * (1 - Math.exp(-9 * dt));
     applyFrustum();
     shake = Math.max(0, shake - dt * 1.5);
     const sh = shake * 0.35 + S.storm * 0.05;
@@ -2742,8 +2818,8 @@ function updateVisuals(dt) {
     L.uLightCol.value.copy(sun.color).multiplyScalar(sun.intensity * (0.35 + 0.65 * day));
     L.uLightCol.value.lerp(K.auroraG, auroraNow * 0.25 * S.night);
     L.uEye.value.copy(camTarget).addScaledVector(CAM_DIR, 30);
-    L.uPx.value = 1 / pxPerUnit;
-    L.uGlint.value = (1 - S.storm) * (0.3 + 0.7 * day);
+    L.uPx.value = 1 / pxHold;
+    L.uGlint.value = (1 - S.storm) * (0.3 + 0.7 * day) * (1 - Math.min(1, zoomDiff / 2.5));
     L.uShadowTint.value = 0.5 + 0.5 * day;
     flameUniforms.uTime.value = S.time;
     windUniform.value.copy(S.wind);
@@ -3015,7 +3091,7 @@ function updateHUD(dt) {
 let internalH = 540;
 function applyFrustum() {
     const a = innerWidth / innerHeight;
-    const base = ZOOMS[zoomIdx] * zoomMul;
+    const base = zoomCur * zoomMul;
     viewH = a < 1 ? (base * 0.95) / a : base;
     const viewW = viewH * a;
     camera.left = -viewW / 2;
@@ -3024,6 +3100,11 @@ function applyFrustum() {
     camera.bottom = -viewH / 2;
     camera.updateProjectionMatrix();
     pxPerUnit = (post.enabled ? internalH : renderer.domElement.height) / viewH;
+    const baseT = ZOOMS[zoomIdx] * zoomMul, viewHT = a < 1 ? (baseT * 0.95) / a : baseT;
+    pxStable = (post.enabled ? internalH : renderer.domElement.height) / viewHT;
+    zoomDiff = Math.abs(ZOOMS[zoomIdx] - zoomCur);
+    // Glimtgitteret skifter størrelse med zoom; det gør vi først, når glimtene er blændet ud midt i animationen
+    if (zoomDiff < 2.2 || !pxHold) pxHold = pxStable;
     snow.uniforms.uScale.value = pxPerUnit;
     bokeh.uniforms.uScale.value = pxPerUnit;
     sparks.uniforms.uScale.value = pxPerUnit;
@@ -3073,6 +3154,7 @@ function loop() {
         updateTeam(dt);
         updateNpcs(dt);
         updateFunnel(dt);
+        updateLantern(dt);
         updateQuests();
         updateZones(dt);
         dressing.update(dt, S.time, P.pos.x, P.pos.z);
@@ -3112,4 +3194,4 @@ loop();
     sb.textContent = 'Begynd rejsen';
 }
 
-window.__game = { outposts, home, enterHome, exitHome, sleepUntilMorning, igloos, questTarget, collide, zones, caches, rope, toggleControl, openZone, exploreMap, pois, FUN, openFunnel, RBY, stat, npcs, talkCtx, openTalk, GEAR, wear, repair, S, P, siku, scene, camera, post, anim, lightUniforms, getInteraction, doAction, craft, RECIPES, nodes, seals, bears, heaters };
+window.__game = { lantern, updateLantern, outposts, home, enterHome, exitHome, sleepUntilMorning, igloos, questTarget, collide, zones, caches, rope, toggleControl, openZone, exploreMap, pois, FUN, openFunnel, RBY, stat, npcs, talkCtx, openTalk, GEAR, wear, repair, S, P, siku, scene, camera, post, anim, lightUniforms, getInteraction, doAction, craft, RECIPES, nodes, seals, bears, heaters };
