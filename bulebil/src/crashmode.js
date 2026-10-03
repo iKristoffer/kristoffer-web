@@ -77,8 +77,9 @@ export class CrashMode {
       if (inp.pressed('Space') && this.breakerReady && !this.breakerUsed) this.crashbreaker();
       const speed = s.player.body.velocity.length();
       if (this.state === 'crash') {
-        const settled = this.crashT > 4 && this.crashT - this.lastWreck > 3.5 && speed < 2;
-        if (settled || this.crashT > 30) {
+        // Long enough for following traffic to plough in: min 9 s, ends after 6 s without a new wreck.
+        const settled = this.crashT > 9 && this.crashT - this.lastWreck > 6 && speed < 2;
+        if (settled || this.crashT > 25) {
           if (this.breakerReady && !this.breakerUsed) { this.setState('prompt'); hud.prompt('CRASHBREAKER! TRYK MELLEMRUM'); }
           else this.finish();
         }

@@ -90,7 +90,8 @@ export class Traffic {
         if (t > lane.len) { this.detach(v); this.s.removeVehicle(v); i--; continue; }
         let desired = v.laneSpeed;
         if (lane.stopT != null && t < lane.stopT - 0.3) {
-          const st = this.light(lane.group);
+          // Once the crash is on, nobody stops for red — traffic keeps flowing into the wreck (Burnout-style).
+          const st = this.s.mode?.counting ? 'green' : this.light(lane.group);
           const dist = lane.stopT - (t + v.halfL);
           if (st === 'red' || (st === 'amber' && dist > 14)) desired = Math.min(desired, Math.sqrt(2 * DECEL * Math.max(0, dist - 0.8)));
         }
