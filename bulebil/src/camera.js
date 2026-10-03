@@ -46,7 +46,7 @@ export class CamRig {
       const lookT = _f.copy(P).addScaledVector(this.fwd, 4).add(_v.clone().set(0, 0.9, 0));
       desired.set(desired.x, Math.max(desired.y, P.y + 1.6), desired.z);
       this.look.lerp(lookT, this.snap ? 1 : kLook);
-      fovT = 62 + Math.min(20, spd * 0.18) + (s.driver.boosting ? 8 : 0);
+      fovT = 62 + Math.min(10, spd * 0.15) + (s.driver.boosting ? 5 : 0);
       kPos = 1 - Math.exp(-14 * dt);
     } else {
       const far = this.mode === 'breaker' ? 1.8 : this.mode === 'results' ? 1.6 : 1;

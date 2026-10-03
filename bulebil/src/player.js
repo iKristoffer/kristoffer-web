@@ -51,10 +51,10 @@ export class PlayerDriver {
       this.lat = ls; this.offroad = surf < 1;
       let acc = 0;
       if (this.grounded) {
-        const max = this.boosting ? spec.boostSpeed : spec.maxSpeed;
-        if (thr > 0 && fs < max) acc += thr * (spec.accel * D.accelMul * (1 - Math.max(0, fs) / max) + 4);
-        if (this.boosting && fs < max) acc += 14;
-        if (brk > 0) { if (fs > 0.5) acc -= brk * 30; else if (fs > -14) acc -= brk * 12; }
+        const max = (this.boosting ? spec.boostSpeed : spec.maxSpeed) * D.topMul;
+        if (thr > 0 && fs < max) acc += thr * spec.accel * D.accelMul * (1 - (Math.max(0, fs) / max) ** 2);
+        if (this.boosting && fs < max) acc += 6;
+        if (brk > 0) { if (fs > 0.5) acc -= brk * D.brake; else if (fs > -10) acc -= brk * 7; }
         if (hb) acc -= clamp(fs * 0.8, -6, 6);
         if (thr === 0 && brk === 0) acc -= clamp(fs * 0.5, -2.5, 2.5);
         if (fs > max + 1) acc -= (fs - max) * 1.2;

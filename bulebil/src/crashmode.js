@@ -128,11 +128,11 @@ export class CrashMode {
     const f = s.player.forward();
     let v0;
     if (this.rev >= ZONE[0] && this.rev <= ZONE[1]) {
-      v0 = 26; s.driver.boost = 1;
+      v0 = 15; s.driver.boost = 1;
       hud.msg('PERFEKT START!', 'gold'); au.boost();
     } else if (this.rev > 0.95) {
       v0 = 4; hud.msg('HJULSPIN!', 'red'); this.rearSmoke(12);
-    } else v0 = this.rev * 14;
+    } else v0 = this.rev * 8;
     s.player.body.velocity.set(f.x * v0, 0, f.z * v0);
     au.beep(true);
     this.setState('runup');
