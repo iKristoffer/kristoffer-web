@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kristoffer — spil og apps</title>
-<meta name="description" content="Kristoffer bygger spil og apps: Nordlysets Spor, Ammehjerne, Block Amok og mere.">
+<meta name="description" content="Kristoffer bygger spil og apps: Ammehjerne, Block Amok og mere.">
 <meta name="theme-color" content="#0a1820">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kristoffer — spil og apps">
-<meta property="og:description" content="Nordlysets Spor, Ammehjerne, Block Amok og mere.">
+<meta property="og:description" content="Ammehjerne, Block Amok, Jawsome og mere.">
 <meta property="og:url" content="https://kristoffer.dk/">
 <meta property="og:image" content="https://kristoffer.dk/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -143,19 +143,6 @@ main { position: relative; z-index: 2; background: var(--bg); margin-top: -1px; 
   mix-blend-mode: soft-light; pointer-events: none;
 }
 
-/* Nordlysets Spor — video */
-.c-nordlys { --accent: #6ff0c0; }
-.c-nordlys video, .c-nordlys .poster {
-  position: absolute; inset: -6% 0; width: 100%; height: 112%; object-fit: cover; z-index: 0;
-}
-.c-nordlys::before {
-  content: ""; position: absolute; inset: 0; z-index: 2;
-  background: linear-gradient(180deg, rgba(5, 13, 19, .05) 10%, rgba(5, 13, 19, .5) 58%, rgba(5, 13, 19, .92) 100%), linear-gradient(90deg, rgba(5, 13, 19, .55), transparent 65%);
-}
-.c-nordlys .info { padding: 40px 36px 38px; }
-.c-nordlys .head h3 { font-size: 2.2rem; }
-.c-nordlys .icon { width: 84px; height: 84px; }
-
 /* Ammehjerne — phones */
 .c-amme { --accent: #f0a3bf; }
 .media-amme {
@@ -242,10 +229,7 @@ footer a:hover { color: var(--ink); }
 @media (max-width: 860px) {
   .c-half, .c-third { grid-column: span 12; }
   .c-wide { min-height: 560px; }
-  .c-nordlys video, .c-nordlys .poster { object-position: 50% 30%; }
   .tag { display: table; margin: 8px 0 0; }
-  .c-nordlys .info { padding: 28px 22px 26px; }
-  .c-nordlys .head h3 { font-size: 1.8rem; }
   .media-amme, .media-block { height: 320px; }
   .phone { width: 180px; } .phone.p2, .phone.p3 { width: 160px; }
   .phone.p1 { margin-left: -90px; } .phone.p2 { margin-left: -225px; } .phone.p3 { margin-left: 65px; }
@@ -293,7 +277,7 @@ footer a:hover { color: var(--ink); }
     <div class="section-head">
       <div class="eyebrow">Projekter</div>
       <h2>Ting jeg har lavet</h2>
-      <p>Apps og spil til telefonen, et spil der kører direkte i browseren, og lidt mere.</p>
+      <p>Apps og spil til telefonen, og lidt mere.</p>
     </div>
 
     <div class="grid">
@@ -314,34 +298,6 @@ footer a:hover { color: var(--ink); }
           <p>Klokken er tre om natten. Hvilken side var det? Start en amning med ét tryk — også fra låseskærmen, Kontrolcenter eller Siri.</p>
           <a class="btn" href="https://apps.apple.com/dk/app/baby-brain-feed-sleep/id6816306256" target="_blank" rel="noopener">Hent i App Store
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
-        </div>
-      </article>
-
-      <!-- Nordlysets Spor -->
-      <article class="card c-wide c-nordlys">
-        <img class="poster" src="img/nordlys-poster.jpg" alt="" aria-hidden="true">
-        <video muted loop playsinline preload="metadata" poster="img/nordlys-poster.jpg" aria-hidden="true">
-          <source src="video/nordlysets-spor.mp4" type="video/mp4">
-        </video>
-        <div class="info">
-          <div class="head">
-            <div class="icon" aria-hidden="true">
-              <svg viewBox="0 0 100 100"><defs>
-                <linearGradient id="nb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050d1c"/><stop offset="1" stop-color="#15304a"/></linearGradient>
-                <linearGradient id="na" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6ff0c0"/><stop offset="1" stop-color="#a684ff"/></linearGradient>
-                <filter id="nblur"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
-                <rect width="100" height="100" fill="url(#nb)"/>
-                <path d="M-5 38 C 20 10, 40 50, 62 24 S 95 14, 108 30" fill="none" stroke="url(#na)" stroke-width="15" stroke-linecap="round" opacity=".85" filter="url(#nblur)"/>
-                <path d="M-5 54 C 25 30, 45 62, 70 40 S 98 34, 108 46" fill="none" stroke="url(#na)" stroke-width="6" stroke-linecap="round" opacity=".7" filter="url(#nblur)"/>
-                <path d="M0 76 C 25 66, 55 72, 100 64 V100 H0Z" fill="#e7f1fa"/>
-                <g fill="#9bb6cf"><ellipse cx="30" cy="86" rx="2.6" ry="1.8"/><ellipse cx="41" cy="82" rx="2.6" ry="1.8"/><ellipse cx="52" cy="86" rx="2.6" ry="1.8"/><ellipse cx="63" cy="82" rx="2.6" ry="1.8"/></g>
-              </svg>
-            </div>
-            <div><h3>Nordlysets Spor<span class="tag">Spil i browseren</span></h3><small>Grønland 1921 · overlevelseseventyr</small></div>
-          </div>
-          <p>Saml drivtømmer, byg iglo og hold varmen gennem snestorme og lange nætter under nordlyset — sammen med din slædehund Siku. Gratis, og det kører direkte her.</p>
-          <a class="btn" href="nordlysets-spor/">Spil nu
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
       </article>
 
@@ -513,13 +469,6 @@ footer a:hover { color: var(--ink); }
     if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
   }), { threshold: .12 });
   document.querySelectorAll('.card').forEach((c, i) => { c.style.transitionDelay = (i % 2) * 90 + 'ms'; io.observe(c); });
-
-  /* video only plays while visible (saves battery, respects reduced motion) */
-  const vid = document.querySelector('.c-nordlys video');
-  if (vid && !reduce) {
-    document.querySelector('.c-nordlys .poster').style.display = 'none';
-    new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? vid.play().catch(() => {}) : vid.pause()), { threshold: .25 }).observe(vid);
-  } else if (vid) { vid.remove(); }
 
   /* screenshot slideshows (one per card) */
   if (!reduce) document.querySelectorAll('.media-block').forEach((box, n) => {
