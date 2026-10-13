@@ -101,14 +101,13 @@
   .chip.festival { background: linear-gradient(90deg, #ffd23f, #ff9a2e); }
   .chip.classic { background: #d6f0fb; }
 
-  /* the code as game tiles */
-  .code { display: flex; justify-content: center; gap: 4px; margin: 1.2rem 0 .3rem; cursor: pointer; }
-  .code .t { width: min(26px, 6.4vw); height: min(38px, 9.4vw); display: grid; place-items: center; border-radius: 7px;
-    font: 900 clamp(.95rem, 4.4vw, 1.25rem) ui-monospace, "SF Mono", Menlo, monospace; color: #fff;
-    border: 2.5px solid var(--ink); box-shadow: inset 0 -4px 0 #0003; text-shadow: 0 2px 0 #0004;
-    animation: tile .4s cubic-bezier(.3,1.6,.5,1) both; }
-  .code .gap { width: 8px; }
-  @keyframes tile { from { transform: translateY(-20px) scale(.4); opacity: 0; } }
+  /* the code: one white ticket, big dark letters, three groups */
+  .code { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; margin: 1.3rem auto .4rem;
+    padding: .55rem .9rem; background: #fff; border: 4px dashed var(--ink); border-radius: 16px; cursor: pointer;
+    font: 900 clamp(1.45rem, 7.4vw, 1.9rem) ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink);
+    letter-spacing: .06em; box-shadow: 4px 5px 0 #231c3333; animation: tile .45s cubic-bezier(.3,1.6,.5,1) .5s both; }
+  .code .dash { width: 12px; height: 6px; border-radius: 3px; background: var(--c); flex: none; }
+  @keyframes tile { from { transform: translateY(-16px) scale(.6); opacity: 0; } }
   .hint { color: var(--muted); font-size: .85rem; font-weight: 700; margin: 0; }
 
   .btn { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; border: 4px solid var(--ink);
@@ -233,15 +232,10 @@
   }
 
   function tiles(code) {
-    const el = $("code");
-    [...code].forEach((ch, i) => {
-      if (i === 4 || i === 8) el.insertAdjacentHTML("beforeend", '<span class="gap"></span>');
-      const t = document.createElement("span");
-      t.className = "t"; t.textContent = ch;
-      t.style.background = COLORS[(A.indexOf(ch) + i) % COLORS.length];
-      t.style.animationDelay = (0.5 + i * 0.05) + "s";
-      el.appendChild(t);
-    });
+    // XXXX–XXXX–XXXX in large dark type; the dashes take the flock's colours
+    const g = [code.slice(0, 4), code.slice(4, 8), code.slice(8)];
+    $("code").innerHTML = `<span>${g[0]}</span><span class="dash" style="--c:#ff9a2e"></span>` +
+      `<span>${g[1]}</span><span class="dash" style="--c:#36c97a"></span><span>${g[2]}</span>`;
   }
 
   function countUp(el, to) {
