@@ -75,23 +75,20 @@
   @keyframes pop { from { transform: scale(.6) rotate(-6deg); opacity: 0; } }
 
   /* the shout on top of the panel: a tilted sticker with comic action lines behind it */
-  .burst { position: absolute; left: 50%; top: -40px; transform: translateX(-50%) rotate(-4deg); z-index: 2;
-    animation: wiggle 3.2s ease-in-out 1.2s infinite; }
+  .burst { position: absolute; left: 50%; top: -40px; transform: translateX(-50%) rotate(-4deg); z-index: 2; }
   .burst::before { content: ""; position: absolute; left: 50%; top: 50%; width: 165%; height: 190%;
     transform: translate(-50%, -50%); z-index: -1; pointer-events: none;
     background: repeating-conic-gradient(var(--ink) 0deg 2.5deg, transparent 2.5deg 14deg);
     -webkit-mask: radial-gradient(closest-side, transparent 70%, #000 72%, #000 94%, transparent 96%);
     mask: radial-gradient(closest-side, transparent 70%, #000 72%, #000 94%, transparent 96%);
-    opacity: .75; animation: rays 1.6s ease-in-out infinite alternate; }
+    opacity: .75; }  /* the action lines stay still; only the sticker moves */
   .burst b { display: inline-block; white-space: nowrap; background: var(--burst); border: 5px solid var(--ink);
     border-radius: 14px; padding: .15rem 1.1rem .3rem; box-shadow: 6px 7px 0 var(--ink);
     font-size: clamp(1.6rem, 8vw, 2.1rem); font-weight: 900; letter-spacing: .03em; color: var(--red);
     -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill;
-    animation: stamp .55s cubic-bezier(.3,1.7,.5,1) .55s both; }
+    animation: stamp .55s cubic-bezier(.3,1.7,.5,1) .55s both, wiggle 3.2s ease-in-out 1.4s infinite; }
   @keyframes stamp { from { transform: scale(2.2) rotate(8deg); opacity: 0; } }
-  @keyframes rays { from { transform: translate(-50%, -50%) scale(.94); } to { transform: translate(-50%, -50%) scale(1.05); } }
-  @keyframes wiggle { 0%, 86%, 100% { transform: translateX(-50%) rotate(-4deg); }
-    90% { transform: translateX(-50%) rotate(-7deg) scale(1.05); } 95% { transform: translateX(-50%) rotate(-2deg); } }
+  @keyframes wiggle { 0%, 86%, 100% { transform: none; } 90% { transform: rotate(-3deg) scale(1.05); } 95% { transform: rotate(2deg); } }
 
   .speaker { display: flex; align-items: flex-end; justify-content: center; gap: .6rem; margin: 0 0 .6rem; }
   .speaker img { width: clamp(56px, 18vw, 78px); flex: none; animation: talk .5s steps(2) infinite; }
