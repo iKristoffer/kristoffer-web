@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flockies-udfordring</title>
+<meta name="description" content="Du er blevet udfordret i Flockies / You have been challenged in Flockies.">
+<meta name="robots" content="noindex">
+<style>
+  :root { --sky1:#8fd3f6; --sky2:#d6f0fb; --card:#ffffffee; --text:#2c4a3a; --muted:#5d7a6b; --accent:#2f9e5b; --pink:#e0558a; }
+  @media (prefers-color-scheme: dark) { :root { --sky1:#2a3472; --sky2:#0e1330; --card:#1a2147ee; --text:#eef1ff; --muted:#aab3e6; --accent:#5fe09a; --pink:#ff7aa8; } }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
+    color:var(--text); background:linear-gradient(var(--sky1), var(--sky2)); background-color:var(--sky2);
+    font:17px/1.6 "Avenir Next","SF Pro Rounded",ui-rounded,"Nunito",-apple-system,"Segoe UI",Roboto,sans-serif; font-weight:600; }
+  main { background:var(--card); border-radius:28px; padding:28px 24px; max-width:440px; width:100%; text-align:center; box-shadow:0 12px 40px #0002; }
+  h1 { margin:0 0 6px; font-size:28px; }
+  .score { font-size:20px; color:var(--pink); margin:4px 0 14px; }
+  .code { font:800 30px/1.2 ui-monospace,"SF Mono",Menlo,monospace; letter-spacing:2px; padding:14px 10px; border-radius:16px; background:#0000000d; margin:8px 0 12px; word-break:break-all; }
+  button, .store { display:block; width:100%; border:0; border-radius:999px; padding:14px; font:inherit; font-weight:800; font-size:18px; cursor:pointer; text-decoration:none; margin-top:10px; }
+  button { background:var(--accent); color:#fff; }
+  .store { background:#111; color:#fff; }
+  ol { text-align:left; color:var(--muted); padding-left:22px; margin:16px 0 4px; }
+  .en { color:var(--muted); font-size:15px; margin-top:18px; }
+  .bad { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Du er udfordret! 🐥</h1>
+  <p class="score" id="score"></p>
+  <div class="code" id="code">…</div>
+  <button id="copy">Kopiér koden</button>
+  <a class="store" href="https://apps.apple.com/app/id6822006719">Hent Flockies i App Store</a>
+  <ol>
+    <li>Åbn Flockies.</li>
+    <li>Tryk på <b>Udfordring</b> i menuen.</li>
+    <li>Tryk <b>Indsæt</b>, og spil præcis de samme brikker.</li>
+  </ol>
+  <p class="en">You've been challenged: open Flockies, tap <b>Challenge</b>, paste the code and play the same pieces.</p>
+</main>
+<script>
+  // The code travels in the #fragment (never sent to the server). Format and check it
+  // like the game does (Challenge.gd): 12 Crockford base-32 characters, the last a
+  // weighted check mod 31. Only used to show the score; the game re-checks it.
+  const A = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const raw = decodeURIComponent(location.hash.slice(1)).toUpperCase().replace(/[^0-9A-Z]/g, "")
+    .replace(/O/g, "0").replace(/[IL]/g, "1").slice(0, 12);
+  const codeEl = document.getElementById("code"), scoreEl = document.getElementById("score");
+  if (raw.length === 12) {
+    const s = [...raw].map(c => A.indexOf(c));
+    let sum = 0; for (let i = 0; i < 11; i++) sum += (i + 1) * s[i];
+    const pretty = raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8);
+    codeEl.textContent = pretty;
+    if (!s.includes(-1) && sum % 31 === s[11]) {
+      // score = low 23 bits of the 55-bit payload (BigInt keeps all 55 bits exact)
+      let v = 0n; for (let i = 0; i < 11; i++) v = (v << 5n) | BigInt(s[i]);
+      const score = Number(v & ((1n << 23n) - 1n)), festival = ((v >> 23n) & 1n) === 1n;
+      scoreEl.textContent = "Slå " + score.toLocaleString("da-DK") + " point · " + (festival ? "Festival" : "Classic");
+    }
+    document.getElementById("copy").onclick = async () => {
+      try { await navigator.clipboard.writeText(pretty); document.getElementById("copy").textContent = "Kopieret!"; } catch (e) {}
+    };
+  } else {
+    codeEl.textContent = "Ingen kode i linket"; codeEl.className = "code bad";
+    document.getElementById("copy").style.display = "none";
+  }
+</script>
+</body>
+</html>
