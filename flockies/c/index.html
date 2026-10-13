@@ -53,9 +53,9 @@
     const pretty = raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8);
     codeEl.textContent = pretty;
     if (!s.includes(-1) && sum % 31 === s[11]) {
-      // score = low 23 bits of the 55-bit payload (BigInt keeps all 55 bits exact)
+      // 55-bit payload: seed 29 | festival 1 | season 2 | score 23 (BigInt keeps it exact)
       let v = 0n; for (let i = 0; i < 11; i++) v = (v << 5n) | BigInt(s[i]);
-      const score = Number(v & ((1n << 23n) - 1n)), festival = ((v >> 23n) & 1n) === 1n;
+      const score = Number(v & ((1n << 23n) - 1n)), festival = ((v >> 25n) & 1n) === 1n;
       scoreEl.textContent = "Slå " + score.toLocaleString("da-DK") + " point · " + (festival ? "Festival" : "Classic");
     }
     document.getElementById("copy").onclick = async () => {
