@@ -74,16 +74,24 @@
     animation: pop .5s cubic-bezier(.3,1.6,.5,1) .3s both; }
   @keyframes pop { from { transform: scale(.6) rotate(-6deg); opacity: 0; } }
 
-  /* sound-effect burst breaking out of the top of the panel */
-  .burst { position: absolute; left: 50%; top: -52px; transform: translateX(-50%) rotate(-5deg); width: 300px; height: 96px;
-    display: grid; place-items: center; animation: shake 2.8s ease-in-out 1s infinite; }
-  .burst::before, .burst::after { content: ""; position: absolute; inset: 0;
-    clip-path: polygon(50% 0%, 58% 22%, 75% 4%, 74% 28%, 96% 18%, 84% 42%, 100% 52%, 82% 62%, 94% 86%, 70% 74%, 62% 100%, 50% 78%, 38% 100%, 30% 74%, 6% 86%, 18% 62%, 0% 52%, 16% 42%, 4% 18%, 26% 28%, 25% 4%, 42% 22%); }
-  .burst::before { background: var(--ink); transform: translate(5px, 6px) scale(1.04); opacity: .9; }
-  .burst::after { background: var(--burst); inset: 4px; }
-  .burst b { position: relative; z-index: 1; font-size: 2rem; font-weight: 900; color: var(--red); letter-spacing: .02em;
-    -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; }
-  @keyframes shake { 0%, 88%, 100% { transform: translateX(-50%) rotate(-5deg); } 91% { transform: translateX(-52%) rotate(-7deg); } 94% { transform: translateX(-48%) rotate(-3deg); } }
+  /* the shout on top of the panel: a tilted sticker with comic action lines behind it */
+  .burst { position: absolute; left: 50%; top: -40px; transform: translateX(-50%) rotate(-4deg); z-index: 2;
+    animation: wiggle 3.2s ease-in-out 1.2s infinite; }
+  .burst::before { content: ""; position: absolute; left: 50%; top: 50%; width: 165%; height: 190%;
+    transform: translate(-50%, -50%); z-index: -1; pointer-events: none;
+    background: repeating-conic-gradient(var(--ink) 0deg 2.5deg, transparent 2.5deg 14deg);
+    -webkit-mask: radial-gradient(closest-side, transparent 70%, #000 72%, #000 94%, transparent 96%);
+    mask: radial-gradient(closest-side, transparent 70%, #000 72%, #000 94%, transparent 96%);
+    opacity: .75; animation: rays 1.6s ease-in-out infinite alternate; }
+  .burst b { display: inline-block; white-space: nowrap; background: var(--burst); border: 5px solid var(--ink);
+    border-radius: 14px; padding: .15rem 1.1rem .3rem; box-shadow: 6px 7px 0 var(--ink);
+    font-size: clamp(1.6rem, 8vw, 2.1rem); font-weight: 900; letter-spacing: .03em; color: var(--red);
+    -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill;
+    animation: stamp .55s cubic-bezier(.3,1.7,.5,1) .55s both; }
+  @keyframes stamp { from { transform: scale(2.2) rotate(8deg); opacity: 0; } }
+  @keyframes rays { from { transform: translate(-50%, -50%) scale(.94); } to { transform: translate(-50%, -50%) scale(1.05); } }
+  @keyframes wiggle { 0%, 86%, 100% { transform: translateX(-50%) rotate(-4deg); }
+    90% { transform: translateX(-50%) rotate(-7deg) scale(1.05); } 95% { transform: translateX(-50%) rotate(-2deg); } }
 
   .speaker { display: flex; align-items: flex-end; justify-content: center; gap: .6rem; margin: 0 0 .6rem; }
   .speaker img { width: clamp(56px, 18vw, 78px); flex: none; animation: talk .5s steps(2) infinite; }
