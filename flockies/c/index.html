@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flockies-udfordring</title>
-<meta name="description" content="Du er blevet udfordret i Flockies / You have been challenged in Flockies.">
+<title>Flockies Challenge</title>
+<meta name="description" content="You have been challenged in Flockies.">
 <meta name="robots" content="noindex">
 <style>
   :root { --sky1:#8fd3f6; --sky2:#d6f0fb; --card:#ffffffee; --text:#2c4a3a; --muted:#5d7a6b; --accent:#2f9e5b; --pink:#e0558a; }
@@ -27,17 +27,16 @@
 </head>
 <body>
 <main>
-  <h1>Du er udfordret! 🐥</h1>
+  <h1>You've been challenged! 🐥</h1>
   <p class="score" id="score"></p>
   <div class="code" id="code">…</div>
-  <button id="copy">Kopiér koden</button>
-  <a class="store" href="https://apps.apple.com/app/id6822006719">Hent Flockies i App Store</a>
+  <button id="copy">Copy the code</button>
+  <a class="store" href="https://apps.apple.com/app/id6822006719">Get Flockies on the App Store</a>
   <ol>
-    <li>Åbn Flockies.</li>
-    <li>Tryk på <b>Udfordring</b> i menuen.</li>
-    <li>Tryk <b>Indsæt</b>, og spil præcis de samme brikker.</li>
+    <li>Open Flockies.</li>
+    <li>Tap <b>Challenge</b> in the menu.</li>
+    <li>Tap <b>Paste</b> and play exactly the same pieces.</li>
   </ol>
-  <p class="en">You've been challenged: open Flockies, tap <b>Challenge</b>, paste the code and play the same pieces.</p>
 </main>
 <script>
   // The code travels in the #fragment (never sent to the server). Format and check it
@@ -56,13 +55,13 @@
       // 55-bit payload: seed 29 | festival 1 | season 2 | score 23 (BigInt keeps it exact)
       let v = 0n; for (let i = 0; i < 11; i++) v = (v << 5n) | BigInt(s[i]);
       const score = Number(v & ((1n << 23n) - 1n)), festival = ((v >> 25n) & 1n) === 1n;
-      scoreEl.textContent = "Slå " + score.toLocaleString("da-DK") + " point · " + (festival ? "Festival" : "Classic");
+      scoreEl.textContent = "Beat " + score.toLocaleString("en-US") + " points · " + (festival ? "Festival" : "Classic");
     }
     document.getElementById("copy").onclick = async () => {
-      try { await navigator.clipboard.writeText(pretty); document.getElementById("copy").textContent = "Kopieret!"; } catch (e) {}
+      try { await navigator.clipboard.writeText(pretty); document.getElementById("copy").textContent = "Copied!"; } catch (e) {}
     };
   } else {
-    codeEl.textContent = "Ingen kode i linket"; codeEl.className = "code bad";
+    codeEl.textContent = "No code in the link"; codeEl.className = "code bad";
     document.getElementById("copy").style.display = "none";
   }
 </script>
