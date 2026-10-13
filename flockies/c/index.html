@@ -2,67 +2,297 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flockies Challenge</title>
-<meta name="description" content="You have been challenged in Flockies.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You've been challenged! · Flockies</title>
+<meta name="description" content="A friend challenged you in Flockies: same pieces, beat their score.">
 <meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="You've been challenged in Flockies! 🐥">
+<meta property="og:description" content="Same pieces as your friend. Can you beat their score?">
+<meta property="og:image" content="https://kristoffer.dk/flockies/c/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#8fd3f6">
 <style>
-  :root { --sky1:#8fd3f6; --sky2:#d6f0fb; --card:#ffffffee; --text:#2c4a3a; --muted:#5d7a6b; --accent:#2f9e5b; --pink:#e0558a; }
-  @media (prefers-color-scheme: dark) { :root { --sky1:#2a3472; --sky2:#0e1330; --card:#1a2147ee; --text:#eef1ff; --muted:#aab3e6; --accent:#5fe09a; --pink:#ff7aa8; } }
+  :root {
+    --sky1: #8fd3f6; --sky2: #d6f0fb; --hill1: #7cc86b; --hill2: #55b35a;
+    --ink: #231c33; --card: #ffffff; --text: #231c33; --muted: #5d6a7b;
+    --burst: #ffd93d; --red: #ff5a4f; --green: #36c97a; --caption: #ffe680;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --sky1: #2a3472; --sky2: #0e1330; --hill1: #1f3f5a; --hill2: #16304a; --card: #fffaf0; }
+  }
   * { box-sizing: border-box; }
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
-    color:var(--text); background:linear-gradient(var(--sky1), var(--sky2)); background-color:var(--sky2);
-    font:17px/1.6 "Avenir Next","SF Pro Rounded",ui-rounded,"Nunito",-apple-system,"Segoe UI",Roboto,sans-serif; font-weight:600; }
-  main { background:var(--card); border-radius:28px; padding:28px 24px; max-width:440px; width:100%; text-align:center; box-shadow:0 12px 40px #0002; }
-  h1 { margin:0 0 6px; font-size:28px; }
-  .score { font-size:20px; color:var(--pink); margin:4px 0 14px; }
-  .code { font:800 30px/1.2 ui-monospace,"SF Mono",Menlo,monospace; letter-spacing:2px; padding:14px 10px; border-radius:16px; background:#0000000d; margin:8px 0 12px; word-break:break-all; }
-  button, .store { display:block; width:100%; border:0; border-radius:999px; padding:14px; font:inherit; font-weight:800; font-size:18px; cursor:pointer; text-decoration:none; margin-top:10px; }
-  button { background:var(--accent); color:#fff; }
-  .store { background:#111; color:#fff; }
-  ol { text-align:left; color:var(--muted); padding-left:22px; margin:16px 0 4px; }
-  .en { color:var(--muted); font-size:15px; margin-top:18px; }
-  .bad { color:var(--muted); }
+  body {
+    margin: 0; color: var(--text); min-height: 100vh; overflow-x: hidden;
+    font: 17px/1.5 "Avenir Next", "SF Pro Rounded", ui-rounded, "Nunito", -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 700; -webkit-text-size-adjust: 100%;
+    background: linear-gradient(var(--sky1), var(--sky2) 560px, var(--sky2)) no-repeat, var(--hill2);
+    background-color: var(--sky2);
+  }
+  /* comic halftone over the whole sky */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    background-image: radial-gradient(#ffffff 1.3px, transparent 1.6px); background-size: 14px 14px;
+  }
+  @media (prefers-color-scheme: dark) { body::before { background-image: radial-gradient(#ffffff22 1.3px, transparent 1.6px); } }
+  .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .9; z-index: 0; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 55%; height: 140%; left: 12%; top: -60%; }
+  .cloud::after { width: 40%; height: 110%; right: 14%; top: -40%; }
+  .c1 { width: 150px; height: 40px; top: 60px; left: 4%; animation: drift 34s linear infinite alternate; }
+  .c2 { width: 110px; height: 30px; top: 190px; right: 6%; animation: drift 42s linear infinite alternate-reverse; }
+  @media (prefers-color-scheme: dark) { .cloud { opacity: .08; } }
+  @keyframes drift { to { transform: translateX(50px); } }
+
+  .wrap { position: relative; z-index: 1; max-width: 30rem; margin: 0 auto; padding: max(1.4rem, env(safe-area-inset-top)) 16px 0; text-align: center; }
+
+  /* the flock drops in, then hops */
+  .flock { display: flex; justify-content: center; gap: 4px; height: 70px; align-items: flex-end; }
+  .flock img { width: min(56px, 12vw); height: auto; transform-origin: 50% 100%;
+    animation: drop .7s cubic-bezier(.3,1.6,.5,1) both, hop 2.4s ease-in-out 1s infinite; }
+  .flock img:nth-child(2) { animation-delay: .08s, 1.15s; } .flock img:nth-child(3) { animation-delay: .16s, 1.3s; }
+  .flock img:nth-child(4) { animation-delay: .24s, 1.45s; } .flock img:nth-child(5) { animation-delay: .32s, 1.6s; }
+  .flock img:nth-child(6) { animation-delay: .40s, 1.75s; } .flock img:nth-child(7) { animation-delay: .48s, 1.9s; }
+  @keyframes drop { from { transform: translateY(-140px) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-12px) scale(1.05, .95); } }
+
+  .logo { font-size: clamp(2.5rem, 12vw, 3.6rem); font-weight: 900; margin: .1rem 0 .6rem; line-height: 1.05;
+    text-shadow: 0 4px 0 #0003; -webkit-text-stroke: 9px var(--ink); paint-order: stroke fill; letter-spacing: .02em; }
+  .logo span { display: inline-block; animation: bob 2.6s ease-in-out infinite; }
+  .logo span:nth-child(1) { color: #ff5a6e; } .logo span:nth-child(2) { color: #ff9a2e; animation-delay: .1s; }
+  .logo span:nth-child(3) { color: #ffd23f; animation-delay: .2s; } .logo span:nth-child(4) { color: #36c97a; animation-delay: .3s; }
+  .logo span:nth-child(5) { color: #2ec4c4; animation-delay: .4s; } .logo span:nth-child(6) { color: #3a86ff; animation-delay: .5s; }
+  .logo span:nth-child(7) { color: #9b5cff; animation-delay: .6s; } .logo span:nth-child(8) { color: #c45cff; animation-delay: .7s; }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+
+  /* a comic panel: thick ink border, hard shadow, halftone */
+  .panel { position: relative; color: var(--ink); border: 5px solid var(--ink); border-radius: 18px;
+    box-shadow: 9px 11px 0 #231c3355; margin: 3.2rem 6px 1.6rem; padding: 3.4rem 1.1rem 1.3rem; transform: rotate(-1deg);
+    background-color: var(--card); background-image: radial-gradient(#ffd93d55 2px, transparent 2.4px); background-size: 16px 16px;
+    animation: pop .5s cubic-bezier(.3,1.6,.5,1) .3s both; }
+  @keyframes pop { from { transform: scale(.6) rotate(-6deg); opacity: 0; } }
+
+  /* sound-effect burst breaking out of the top of the panel */
+  .burst { position: absolute; left: 50%; top: -52px; transform: translateX(-50%) rotate(-5deg); width: 300px; height: 96px;
+    display: grid; place-items: center; animation: shake 2.8s ease-in-out 1s infinite; }
+  .burst::before, .burst::after { content: ""; position: absolute; inset: 0;
+    clip-path: polygon(50% 0%, 58% 22%, 75% 4%, 74% 28%, 96% 18%, 84% 42%, 100% 52%, 82% 62%, 94% 86%, 70% 74%, 62% 100%, 50% 78%, 38% 100%, 30% 74%, 6% 86%, 18% 62%, 0% 52%, 16% 42%, 4% 18%, 26% 28%, 25% 4%, 42% 22%); }
+  .burst::before { background: var(--ink); transform: translate(5px, 6px) scale(1.04); opacity: .9; }
+  .burst::after { background: var(--burst); inset: 4px; }
+  .burst b { position: relative; z-index: 1; font-size: 2rem; font-weight: 900; color: var(--red); letter-spacing: .02em;
+    -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; }
+  @keyframes shake { 0%, 88%, 100% { transform: translateX(-50%) rotate(-5deg); } 91% { transform: translateX(-52%) rotate(-7deg); } 94% { transform: translateX(-48%) rotate(-3deg); } }
+
+  .speaker { display: flex; align-items: flex-end; justify-content: center; gap: .6rem; margin: 0 0 .6rem; }
+  .speaker img { width: 78px; animation: talk .5s steps(2) infinite; }
+  @keyframes talk { 50% { transform: translateY(-3px) rotate(-3deg); } }
+  .bubble { position: relative; background: #fff; border: 4px solid var(--ink); border-radius: 26px; padding: .55rem 1rem;
+    font-weight: 900; font-size: 1.15rem; box-shadow: 4px 5px 0 #231c3333; margin-bottom: 2.6rem; }
+  .bubble::after { content: ""; position: absolute; left: 18px; bottom: -16px; width: 22px; height: 22px; background: #fff;
+    border-right: 4px solid var(--ink); border-bottom: 4px solid var(--ink); transform: skewX(30deg) rotate(30deg); }
+
+  .score { font-size: clamp(3.4rem, 17vw, 4.6rem); font-weight: 900; line-height: 1; margin: .2rem 0 .1rem; color: var(--burst);
+    -webkit-text-stroke: 10px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 #231c3355; }
+  .points { font-size: 1.05rem; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+  .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 0; }
+  .chip { border: 3px solid var(--ink); border-radius: 999px; padding: .2rem .8rem; font-weight: 900; font-size: .95rem; background: #fff; }
+  .chip.festival { background: linear-gradient(90deg, #ffd23f, #ff9a2e); }
+  .chip.classic { background: #d6f0fb; }
+
+  /* the code as game tiles */
+  .code { display: flex; justify-content: center; gap: 4px; margin: 1.2rem 0 .3rem; cursor: pointer; }
+  .code .t { width: min(26px, 6.4vw); height: min(38px, 9.4vw); display: grid; place-items: center; border-radius: 7px;
+    font: 900 clamp(.95rem, 4.4vw, 1.25rem) ui-monospace, "SF Mono", Menlo, monospace; color: #fff;
+    border: 2.5px solid var(--ink); box-shadow: inset 0 -4px 0 #0003; text-shadow: 0 2px 0 #0004;
+    animation: tile .4s cubic-bezier(.3,1.6,.5,1) both; }
+  .code .gap { width: 8px; }
+  @keyframes tile { from { transform: translateY(-20px) scale(.4); opacity: 0; } }
+  .hint { color: var(--muted); font-size: .85rem; font-weight: 700; margin: 0; }
+
+  .btn { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; border: 4px solid var(--ink);
+    border-radius: 999px; padding: .85rem 1rem; font: inherit; font-weight: 900; font-size: 1.15rem; cursor: pointer;
+    text-decoration: none; margin-top: .8rem; transition: transform .08s; }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink) !important; }
+  .copy { background: var(--green); color: #fff; box-shadow: 0 6px 0 var(--ink); text-shadow: 0 2px 0 #0003; }
+  .store { background: var(--ink); color: #fff; box-shadow: 0 6px 0 #00000055; font-size: 1.02rem; white-space: nowrap; }
+  .store svg { width: 22px; height: 22px; fill: #fff; }
+
+  /* how-to as three little comic panels */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 6px 1.6rem; }
+  .step { background: var(--card); color: var(--ink); border: 4px solid var(--ink); border-radius: 14px; padding: .55rem .4rem .7rem;
+    box-shadow: 5px 6px 0 #231c3344; font-size: .92rem; line-height: 1.25; position: relative; }
+  .step:nth-child(1) { transform: rotate(-1.5deg); } .step:nth-child(3) { transform: rotate(1.5deg); }
+  .step img { width: 44px; display: block; margin: .1rem auto .3rem; }
+  .step .n { position: absolute; top: -12px; left: -10px; width: 30px; height: 30px; border-radius: 50%; background: var(--caption);
+    border: 3px solid var(--ink); display: grid; place-items: center; font-weight: 900; font-size: .95rem; }
+
+  .none .score { font-size: 2.4rem; color: #fff; -webkit-text-stroke: 7px var(--ink); }
+  .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 160%);
+    background: var(--ink); color: #fff; padding: .7rem 1.3rem; border-radius: 999px; font-weight: 900; z-index: 10;
+    white-space: nowrap; transition: transform .3s cubic-bezier(.3,1.6,.5,1); }
+  .toast.on { transform: translate(-50%, 0); }
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9; }
+
+  .hills { position: relative; z-index: 1; height: 90px; overflow: hidden; }
+  .hills::before, .hills::after { content: ""; position: absolute; border-radius: 50% 50% 0 0; bottom: 0; }
+  .hills::before { left: -20%; width: 90%; height: 160px; background: var(--hill2); }
+  .hills::after { right: -25%; width: 85%; height: 120px; background: var(--hill1); }
+  footer { position: relative; z-index: 2; text-align: center; color: #123d22; font-weight: 800; font-size: .9rem;
+    padding: .3rem 1rem max(1.6rem, env(safe-area-inset-bottom)); background: var(--hill1); }
+  footer a { color: inherit; }
+  @media (prefers-color-scheme: dark) { footer { color: #eef1ff; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <h1>You've been challenged! 🐥</h1>
-  <p class="score" id="score"></p>
-  <div class="code" id="code">…</div>
-  <button id="copy">Copy the code</button>
-  <a class="store" href="https://apps.apple.com/app/id6822006719">Get Flockies on the App Store</a>
-  <ol>
-    <li>Open Flockies.</li>
-    <li>Tap <b>Challenge</b> in the menu.</li>
-    <li>Tap <b>Paste</b> and play exactly the same pieces.</li>
-  </ol>
+<div class="cloud c1"></div><div class="cloud c2"></div>
+<main class="wrap">
+  <div class="flock" aria-hidden="true">
+    <img src="../ladybug.png" alt=""><img src="../fox.png" alt=""><img src="../chick.png" alt=""><img src="../frog.png" alt=""><img src="../turtle.png" alt=""><img src="../penguin.png" alt=""><img src="../cat.png" alt="">
+  </div>
+  <p class="logo" aria-label="Flockies"><span>F</span><span>L</span><span>O</span><span>C</span><span>K</span><span>I</span><span>E</span><span>S</span></p>
+
+  <section class="panel" id="card">
+    <div class="burst" aria-hidden="true"><b id="burst">CHALLENGE!</b></div>
+    <div class="speaker">
+      <img id="speaker" src="../fox.png" alt="">
+      <div class="bubble" id="line">Can you beat me?</div>
+    </div>
+    <div class="score" id="score">…</div>
+    <div class="points" id="points">points to beat</div>
+    <div class="chips" id="chips"></div>
+    <div class="code" id="code" title="Tap to copy" role="button" tabindex="0" aria-label="Copy the challenge code"></div>
+    <p class="hint" id="hint">Same pieces, in the same order. Tap the code to copy it.</p>
+    <button class="btn copy" id="copy">Copy the code</button>
+    <a class="btn store" href="https://apps.apple.com/app/id6822006719">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 4.9c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.1 1.1.1 2.3-.6 3-1.5z"/></svg>
+      Get it on the App Store
+    </a>
+  </section>
+
+  <div class="steps">
+    <div class="step"><span class="n">1</span><img src="../chick.png" alt="">Open Flockies</div>
+    <div class="step"><span class="n">2</span><img src="../cat.png" alt="">Tap <b>Challenge</b></div>
+    <div class="step"><span class="n">3</span><img src="../frog.png" alt=""><b>Paste</b> and play!</div>
+  </div>
 </main>
+<div class="hills" aria-hidden="true"></div>
+<footer>No ads, ever. Made by <a href="https://kristoffer.dk">Kristoffer</a> · <a href="../privacy-policy.html">Privacy</a></footer>
+<div class="toast" id="toast" role="status">Copied! Now open Flockies 🐥</div>
+<canvas id="confetti" aria-hidden="true"></canvas>
 <script>
-  // The code travels in the #fragment (never sent to the server). Format and check it
-  // like the game does (Challenge.gd): 12 Crockford base-32 characters, the last a
-  // weighted check mod 31. Only used to show the score; the game re-checks it.
+  // The code travels in the #fragment (never sent to the server). Decode it like the game
+  // (Challenge.gd): 12 Crockford base-32 characters, the last a weighted check mod 31;
+  // 55-bit payload = seed 29 | festival 1 | season 2 | score 23. The game re-checks it.
   const A = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const COLORS = ["#ff5a6e", "#ff9a2e", "#f2b70f", "#36c97a", "#2ec4c4", "#3a86ff", "#9b5cff"];
+  const SPEAKERS = ["fox", "chick", "cat", "frog", "penguin", "ladybug", "turtle"];
+  const LINES = ["Can you beat me?", "Your turn!", "Bet you can't!", "Same pieces. Go!", "Beat that!"];
+  addEventListener("hashchange", () => location.reload());  // a new code pasted into the address bar
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (id) => document.getElementById(id);
   const raw = decodeURIComponent(location.hash.slice(1)).toUpperCase().replace(/[^0-9A-Z]/g, "")
     .replace(/O/g, "0").replace(/[IL]/g, "1").slice(0, 12);
-  const codeEl = document.getElementById("code"), scoreEl = document.getElementById("score");
+  let pretty = "";
+  let ok = false;
   if (raw.length === 12) {
     const s = [...raw].map(c => A.indexOf(c));
     let sum = 0; for (let i = 0; i < 11; i++) sum += (i + 1) * s[i];
-    const pretty = raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8);
-    codeEl.textContent = pretty;
+    pretty = raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8);
     if (!s.includes(-1) && sum % 31 === s[11]) {
-      // 55-bit payload: seed 29 | festival 1 | season 2 | score 23 (BigInt keeps it exact)
       let v = 0n; for (let i = 0; i < 11; i++) v = (v << 5n) | BigInt(s[i]);
-      const score = Number(v & ((1n << 23n) - 1n)), festival = ((v >> 25n) & 1n) === 1n;
-      scoreEl.textContent = "Beat " + score.toLocaleString("en-US") + " points · " + (festival ? "Festival" : "Classic");
+      const score = Number(v & ((1n << 23n) - 1n));
+      const season = Number((v >> 23n) & 3n);
+      const festival = ((v >> 25n) & 1n) === 1n;
+      ok = true;
+      const pick = Number(v % 997n);  // the same code always gets the same speaker and line
+      $("speaker").src = "../" + SPEAKERS[pick % SPEAKERS.length] + ".png";
+      $("line").textContent = LINES[pick % LINES.length];
+      countUp($("score"), score);
+      $("points").textContent = score === 1 ? "point to beat" : "points to beat";
+      const chips = [`<span class="chip ${festival ? "festival" : "classic"}">${festival ? "🎉 Festival" : "🧩 Classic"}</span>`];
+      if (festival && season === 1) chips.push('<span class="chip">🎃 Halloween</span>');
+      if (festival && season === 2) chips.push('<span class="chip">🎄 Christmas</span>');
+      $("chips").innerHTML = chips.join("");
+      document.title = `Beat ${score.toLocaleString("en-US")} in Flockies!`;
+      tiles(raw);
     }
-    document.getElementById("copy").onclick = async () => {
-      try { await navigator.clipboard.writeText(pretty); document.getElementById("copy").textContent = "Copied!"; } catch (e) {}
-    };
-  } else {
-    codeEl.textContent = "No code in the link"; codeEl.className = "code bad";
-    document.getElementById("copy").style.display = "none";
+  }
+  if (!ok) {
+    $("card").classList.add("none");
+    $("burst").textContent = "HUH?";
+    $("speaker").src = "../turtle.png";
+    $("line").textContent = raw.length ? "That code looks scrambled…" : "No challenge in this link…";
+    $("score").textContent = "No code";
+    $("points").textContent = "ask your friend to send it again";
+    $("hint").textContent = "Or get the game and challenge someone yourself!";
+    $("copy").style.display = "none";
+    $("code").style.display = "none";
+  }
+
+  function tiles(code) {
+    const el = $("code");
+    [...code].forEach((ch, i) => {
+      if (i === 4 || i === 8) el.insertAdjacentHTML("beforeend", '<span class="gap"></span>');
+      const t = document.createElement("span");
+      t.className = "t"; t.textContent = ch;
+      t.style.background = COLORS[(A.indexOf(ch) + i) % COLORS.length];
+      t.style.animationDelay = (0.5 + i * 0.05) + "s";
+      el.appendChild(t);
+    });
+  }
+
+  function countUp(el, to) {
+    const fmt = (n) => n.toLocaleString("en-US");
+    if (still) { el.textContent = fmt(to); return; }
+    const start = performance.now(), dur = Math.min(1400, 400 + to / 10);
+    (function step(now) {
+      const k = Math.min(1, (now - start - 500) / dur);
+      el.textContent = fmt(Math.round(to * (k < 0 ? 0 : 1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(step);
+    })(start);
+  }
+
+  function copy() {
+    if (!pretty) return;
+    // the old-fashioned copy first: synchronous inside the tap, works where the async API is blocked
+    const ta = document.createElement("textarea");
+    ta.value = pretty; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99);
+    let done = false;
+    try { done = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    if (!done && navigator.clipboard) navigator.clipboard.writeText(pretty).catch(() => {});
+    $("copy").textContent = "Copied! ✓";
+    $("toast").classList.add("on");
+    setTimeout(() => $("toast").classList.remove("on"), 2600);
+    confetti();
+  }
+  $("copy").onclick = copy;
+  $("code").onclick = copy;
+  $("code").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); } };
+
+  function confetti() {
+    if (still) return;
+    const c = $("confetti"), g = c.getContext("2d");
+    const dpr = devicePixelRatio || 1;
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const box = $("copy").getBoundingClientRect();
+    const bits = Array.from({ length: 70 }, () => ({
+      x: box.left + box.width / 2, y: box.top, vx: (Math.random() - .5) * 9, vy: -Math.random() * 11 - 4,
+      r: Math.random() * 6, w: 6 + Math.random() * 6, h: 4 + Math.random() * 4, col: COLORS[Math.floor(Math.random() * 7)],
+    }));
+    const t0 = performance.now();
+    (function frame(now) {
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      for (const b of bits) {
+        b.vy += .35; b.x += b.vx; b.y += b.vy; b.r += .2;
+        g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.fillStyle = b.col; g.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); g.restore();
+      }
+      if (now - t0 < 2200) requestAnimationFrame(frame); else g.clearRect(0, 0, innerWidth, innerHeight);
+    })(t0);
   }
 </script>
 </body>
