@@ -177,6 +177,10 @@ main { position: relative; z-index: 2; background: var(--bg); margin-top: -1px; 
 .c-wide.c-flock .icon { width: 84px; height: 84px; }
 .c-wide.c-flock .soon { margin: 0; color: var(--muted); font-size: .95rem; }
 
+/* Flick Flock — reuses the Flockies card, phones left */
+.c-wide.c-flock.c-ff { flex-direction: row; --accent: #f7c948; }
+.c-ff .media-flock { background: radial-gradient(70% 80% at 50% 45%, #3b3f8f, #1f2260 60%, #4caf50 60.3%, #3d9a40); }
+
 /* Block Amok — slideshow */
 .c-block { --accent: #7fd66b; }
 .media-block { position: relative; height: 380px; overflow: hidden; background: #2a7fd0; }
@@ -257,7 +261,7 @@ footer a:hover { color: var(--ink); }
   .c-wide.c-amme .phone.p1 { margin-left: -90px; top: 40px; } .c-wide.c-amme .phone.p2 { margin-left: -225px; top: 90px; } .c-wide.c-amme .phone.p3 { margin-left: 65px; top: 90px; }
   .c-wide.c-amme .info { padding: 26px 22px 28px; }
   .c-wide.c-amme .head h3 { font-size: 1.8rem; }
-  .c-wide.c-flock { flex-direction: column; min-height: 0; }
+  .c-wide.c-flock, .c-wide.c-flock.c-ff { flex-direction: column; min-height: 0; }
   .c-wide.c-flock .media-flock { flex: none; height: 330px; min-height: 0; }
   .c-wide.c-flock .phone { width: 180px; bottom: -40px; } .c-wide.c-flock .phone.p2, .c-wide.c-flock .phone.p3 { width: 160px; }
   .c-wide.c-flock .phone.p1 { margin-left: -90px; top: 40px; } .c-wide.c-flock .phone.p2 { margin-left: -225px; top: 90px; } .c-wide.c-flock .phone.p3 { margin-left: 65px; top: 90px; }
@@ -336,8 +340,25 @@ footer a:hover { color: var(--ink); }
             <div class="icon"><img src="img/flockies-icon.jpg" alt="" width="72" height="72" loading="lazy"></div>
             <div><h3>Flockies<span class="tag">Coming soon</span></h3><small>iPhone &amp; Android · blokpuslespil</small></div>
           </div>
-          <p>Et roligt blokpuslespil med en flok glade dyr. Fyld en række eller en kolonne, og send dyrene hjem. Ingen reklamer, intet tidspres, ingen energibarer.</p>
+          <p>Et roligt blokpuslespil med en flok glade dyr. Fyld en række eller en kolonne, og send dyrene hjem. Intet tidspres og ingen energibarer.</p>
           <p class="soon">Kommer snart i App Store og Google Play.</p>
+        </div>
+      </article>
+
+      <!-- Flick Flock (coming soon) -->
+      <article class="card c-wide c-flock c-ff">
+        <div class="media-flock" data-par=".06">
+          <div class="phone p2"><img src="img/flickflock-1.jpg" alt="Flick Flock: menuen" loading="lazy"></div>
+          <div class="phone p3"><img src="img/flickflock-4.jpg" alt="Flick Flock: Monster Munch" loading="lazy"></div>
+          <div class="phone p1"><img src="img/flickflock-3.jpg" alt="Flick Flock: Space Spin med fire spillere" loading="lazy"></div>
+        </div>
+        <div class="info">
+          <div class="head">
+            <div class="icon"><img src="img/flickflock-icon.jpg" alt="" width="72" height="72" loading="lazy"></div>
+            <div><h3>Flick Flock<span class="tag">Coming soon</span></h3><small>iPhone &amp; iPad · kuglespil for 1–4</small></div>
+          </div>
+          <p>Kuglefest for op til fire spillere om én skærm — eller dig mod computeren. Svirp dyrekuglerne mod målet, ind på en snurrende skive, i munden på et sultent monster eller i mål.</p>
+          <p class="soon">Kommer snart i App Store.</p>
         </div>
       </article>
 
