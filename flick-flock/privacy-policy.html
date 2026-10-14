@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privatlivspolitik — Flick Flock</title>
+<meta name="description" content="Privatlivspolitik for spillet Flick Flock / Privacy policy for the game Flick Flock.">
+<style>
+  :root {
+    --sky1: #8fd3f6; --sky2: #d6f0fb;
+    --hill1: #7cc86b; --hill2: #55b35a;
+    --card: #ffffffee; --text: #2c4a3a; --muted: #5d7a6b; --rule: #dcebdc;
+    --accent: #2f9e5b; --accent-dark: #1f7a43; --surface: #f1f9ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sky1: #2a3472; --sky2: #0e1330;
+      --hill1: #1f3f5a; --hill2: #16304a;
+      --card: #1a2147ee; --text: #eef1ff; --muted: #aab3e6; --rule: #2e3970;
+      --accent: #5fe09a; --accent-dark: #36c97a; --surface: #141a3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--text);
+    font: 17px/1.65 "Avenir Next", "SF Pro Rounded", ui-rounded, "Nunito", -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(var(--sky1), var(--sky2) 520px, var(--sky2)) no-repeat, var(--hill2);
+    background-color: var(--sky2);
+    -webkit-text-size-adjust: 100%;
+    min-height: 100vh; position: relative; overflow-x: hidden;
+  }
+  .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .85; filter: drop-shadow(0 6px 0 #ffffff55); z-index: 0; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 55%; height: 140%; left: 12%; top: -60%; }
+  .cloud::after { width: 40%; height: 110%; right: 14%; top: -40%; }
+  .c1 { width: 150px; height: 40px; top: 70px; left: 6%; animation: drift 38s linear infinite alternate; }
+  .c2 { width: 110px; height: 30px; top: 150px; right: 8%; animation: drift 46s linear infinite alternate-reverse; }
+  @media (prefers-color-scheme: dark) { .cloud { display: none; } }
+  @keyframes drift { to { transform: translateX(40px); } }
+  .wrap { position: relative; z-index: 1; max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.1rem 0; }
+  .hero { text-align: center; }
+  .flock { display: flex; justify-content: center; gap: min(.35rem, 1vw); margin-bottom: .2rem; }
+  .flock img { width: min(68px, 15vw); height: auto; animation: hop 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+  .flock img:nth-child(2) { animation-delay: .15s; } .flock img:nth-child(3) { animation-delay: .3s; }
+  .flock img:nth-child(4) { animation-delay: .45s; } .flock img:nth-child(5) { animation-delay: .6s; }
+  .flock img:nth-child(6) { animation-delay: .75s; } .flock img:nth-child(7) { animation-delay: .9s; }
+  @keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-14px) scale(1.04, .97); } }
+  @media (prefers-reduced-motion: reduce) { .flock img, .cloud { animation: none; } }
+  .logo { font-size: clamp(2.6rem, 11vw, 4rem); font-weight: 900; letter-spacing: .01em; margin: 0; line-height: 1.1; text-shadow: 0 3px 0 #0003; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; }
+  @media (prefers-color-scheme: dark) { .logo { -webkit-text-stroke: 0; } }
+  .logo span:nth-child(1) { color: #ff5a6e; } .logo span:nth-child(2) { color: #ff9a2e; }
+  .logo span:nth-child(3) { color: #ffd23f; } .logo span:nth-child(4) { color: #36c97a; }
+  .logo span:nth-child(5) { color: #2ec4c4; } .logo span:nth-child(6) { color: #3a86ff; }
+  .logo span:nth-child(7) { color: #9b5cff; } .logo span:nth-child(8) { color: #c45cff; }
+  .logo span:nth-child(9) { color: #ff5a6e; } .logo span:nth-child(10) { color: #ff9a2e; }
+  .logo .gap { display: inline-block; width: .3em; }
+  .sub { font-weight: 800; font-size: 1.15rem; margin: .3rem 0 1rem; }
+  .lang { display: inline-flex; gap: .5rem; margin-bottom: 1.4rem; }
+  .lang a {
+    background: var(--accent); color: #fff; text-decoration: none; font-weight: 800;
+    padding: .45rem 1.3rem; border-radius: 999px; box-shadow: 0 4px 0 var(--accent-dark);
+  }
+  .lang a:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-dark); }
+  section {
+    background: var(--card); border-radius: 26px; padding: 1.6rem 1.5rem 1.2rem;
+    box-shadow: 0 8px 0 #0000001a, 0 18px 40px #0000001f; margin-bottom: 2rem;
+  }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 .4rem; font-weight: 900; }
+  h2 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; font-weight: 900; display: flex; align-items: center; gap: .55rem; }
+  h2::before { content: ""; width: .75rem; height: .75rem; border-radius: 30%; background: var(--c, #36c97a); box-shadow: inset 0 -3px 0 #0003; flex: none; }
+  h2:nth-of-type(6n+1) { --c: #ff5a6e; } h2:nth-of-type(6n+2) { --c: #ff9a2e; } h2:nth-of-type(6n+3) { --c: #ffd23f; }
+  h2:nth-of-type(6n+4) { --c: #36c97a; } h2:nth-of-type(6n+5) { --c: #3a86ff; } h2:nth-of-type(6n) { --c: #9b5cff; }
+  p, li { margin: 0 0 .85rem; font-weight: 500; }
+  a { color: var(--accent-dark); }
+  @media (prefers-color-scheme: dark) { a { color: var(--accent); } }
+  .meta { color: var(--muted); font-size: .92rem; margin-bottom: 1.2rem; }
+  .callout {
+    background: var(--surface); border: 3px solid var(--accent); border-radius: 20px;
+    padding: 1rem 1.15rem; margin: 1.2rem 0; position: relative;
+  }
+  .callout p { margin: 0; font-weight: 700; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
+  .hills { position: relative; z-index: 1; height: 90px; margin-top: 1rem; overflow: hidden; }
+  .hills::before, .hills::after { content: ""; position: absolute; border-radius: 50% 50% 0 0; bottom: 0; }
+  .hills::before { left: -20%; width: 90%; height: 160px; background: var(--hill2); }
+  .hills::after { right: -25%; width: 85%; height: 120px; background: var(--hill1); }
+  footer { position: relative; z-index: 2; text-align: center; color: #123d22; font-weight: 700; font-size: .9rem; padding: .4rem 1rem 2rem; background: var(--hill1); }
+  @media (prefers-color-scheme: dark) { footer { color: #eef1ff; } }
+</style>
+</head>
+<body>
+<div class="cloud c1"></div><div class="cloud c2"></div>
+<main class="wrap">
+  <header class="hero">
+    <div class="flock" aria-hidden="true">
+      <img src="ladybug.png" alt=""><img src="frog.png" alt=""><img src="penguin.png" alt=""><img src="chick.png" alt="">
+    </div>
+    <p class="logo" aria-label="Flick Flock"><span>F</span><span>L</span><span>I</span><span>C</span><span>K</span><i class="gap"></i><span>F</span><span>L</span><span>O</span><span>C</span><span>K</span></p>
+    <p class="sub">Privatlivspolitik · Privacy Policy</p>
+    <p class="lang"><a href="#da">Dansk</a><a href="#en">English</a></p>
+  </header>
+  <section id="da" lang="da">
+  <h1>Privatlivspolitik for Flick Flock</h1>
+  <p class="meta">Gælder fra 14. oktober 2026 · spillet <strong>Flick Flock</strong> (bundle id <code>dk.kristoffer.flickflock</code>)</p>
+  <div class="callout"><p><strong>Kort sagt: Flick Flock indsamler ingen oplysninger om dig.</strong> Spillet har ingen konto, ingen reklamer, ingen statistik/analyse og ingen sporing, og vi kan ikke se, hvem der spiller, eller hvordan.</p></div>
+  <h2>Hvad spillet gemmer — og hvor</h2>
+  <p>Et parti i gang, dine indstillinger (lyd og musik) og hvilke tips du har set, gemmes kun på din egen enhed. Intet af det sendes til os. Sletter du spillet, forsvinder den lokale kopi. Oplysningerne indgår i din enheds almindelige backup (iCloud eller computer), hvis du har slået den til.</p>
+  <h2>Spil online</h2>
+  <p>Vælger du at spille online, bruger spillet Apples <strong>Game Center</strong> til at finde modspillere og sende trækkene frem og tilbage. Partiet (kuglernes positioner og skuddene) og dit Game Center-navn håndteres da af Apple efter dine egne Game Center-indstillinger, ikke af os; se <a href="https://www.apple.com/dk/legal/privacy/" rel="noopener">Apples privatlivspolitik</a>. Spiller du kun på samme skærm, bruges Game Center ikke.</p>
+  <h2>Støt udvikleren</h2>
+  <p>Spillet har et valgfrit køb, hvor du kan give udvikleren et lille tip. Det låser ikke noget op. Betalingen håndteres udelukkende af Apple (App Store). Vi modtager ingen betalingsoplysninger og ingen oplysninger om, hvem du er.</p>
+  <h2>Reklamer og tredjeparter</h2>
+  <p>Spillet indeholder ingen reklamer, ingen analyse- eller sporingsværktøjer og ingen tredjeparts-SDK'er ud over Apples egne tjenester nævnt ovenfor. Spillet opretter ikke selv forbindelse til nogen server. Vi sælger eller deler ingen data — vi har ingen.</p>
+  <h2>Børn</h2>
+  <p>Spillet indsamler ikke personoplysninger om nogen, heller ikke børn. Det indeholder ingen reklamer, ingen chat og ingen links ud af spillet.</p>
+  <h2>Dine rettigheder</h2>
+  <p>Efter GDPR har du ret til indsigt, berigtigelse og sletning. Da vi ikke opbevarer nogen data om dig, kan du selv slette alt ved at slette spillet. Data i Game Center administrerer du hos Apple.</p>
+  <h2>Ændringer</h2>
+  <p>Ændrer spillet sig på en måde, der påvirker privatlivet, opdaterer vi denne side og datoen øverst, før den nye version udgives.</p>
+  <h2>Kontakt</h2>
+  <p>Spørgsmål kan sendes til <a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a>.<br>Kristoffer Johansen, Danmark</p>
+  </section>
+  <section id="en" lang="en">
+  <h1>Privacy Policy for Flick Flock</h1>
+  <p class="meta">Effective 14 October 2026 · The game <strong>Flick Flock</strong> (bundle id <code>dk.kristoffer.flickflock</code>)</p>
+  <div class="callout"><p><strong>In short: Flick Flock does not collect any information about you.</strong> There are no accounts, no ads, no analytics and no tracking, and we cannot see who plays or how.</p></div>
+  <h2>What the game stores — and where</h2>
+  <p>A game in progress, your settings (sound and music) and which tips you have seen are stored only on your own device. None of it is sent to us. Deleting the game removes the local copy. The data is included in your device's regular backup (iCloud or computer) if you have it enabled.</p>
+  <h2>Playing online</h2>
+  <p>If you choose to play online, the game uses Apple's <strong>Game Center</strong> to find opponents and pass the turns back and forth. The match (the marbles' positions and the shots) and your Game Center name are then handled by Apple according to your own Game Center settings, not by us; see <a href="https://www.apple.com/legal/privacy/" rel="noopener">Apple's Privacy Policy</a>. If you only play on one screen, Game Center is not used.</p>
+  <h2>Support the developer</h2>
+  <p>The game has an optional purchase where you can give the developer a small tip. It unlocks nothing. Payment is handled entirely by Apple (App Store). We receive no payment details and no information about who you are.</p>
+  <h2>Ads and third parties</h2>
+  <p>The game contains no ads, no analytics or tracking tools and no third-party SDKs beyond Apple's own services mentioned above. The game does not itself connect to any server. We sell or share no data — we have none.</p>
+  <h2>Children</h2>
+  <p>The game collects no personal information about anyone, including children. It has no ads, no chat and no links out of the game.</p>
+  <h2>Your rights</h2>
+  <p>Under the GDPR you have rights of access, rectification and erasure. Since we hold no data about you, you can delete everything yourself by deleting the game. Data in Game Center is managed with Apple.</p>
+  <h2>Changes</h2>
+  <p>If the game changes in a way that affects privacy, we will update this page and the date above before releasing that version.</p>
+  <h2>Contact</h2>
+  <p>Questions can be sent to <a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a>.<br>Kristoffer Johansen, Denmark</p>
+  </section>
+
+</main>
+<div class="hills" aria-hidden="true"></div>
+<footer>Flick Flock (<code>dk.kristoffer.flickflock</code>) · Kristoffer Johansen · 14. oktober 2026 · Ingen reklamer. Aldrig. / No ads. Ever.</footer>
+</body>
+</html>
