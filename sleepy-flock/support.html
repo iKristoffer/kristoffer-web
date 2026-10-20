@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support — Sleepy Flock</title>
+<meta name="description" content="Support for spillet Sleepy Flock / Support for the game Sleepy Flock.">
+<style>
+  :root {
+    --sky1: #8fd3f6; --sky2: #d6f0fb;
+    --hill1: #7cc86b; --hill2: #55b35a;
+    --card: #ffffffee; --text: #2c4a3a; --muted: #5d7a6b; --rule: #dcebdc;
+    --accent: #2f9e5b; --accent-dark: #1f7a43; --surface: #f1f9ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sky1: #2a3472; --sky2: #0e1330;
+      --hill1: #1f3f5a; --hill2: #16304a;
+      --card: #1a2147ee; --text: #eef1ff; --muted: #aab3e6; --rule: #2e3970;
+      --accent: #5fe09a; --accent-dark: #36c97a; --surface: #141a3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--text);
+    font: 17px/1.65 "Avenir Next", "SF Pro Rounded", ui-rounded, "Nunito", -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(var(--sky1), var(--sky2) 520px, var(--sky2)) no-repeat, var(--hill2);
+    background-color: var(--sky2);
+    -webkit-text-size-adjust: 100%;
+    min-height: 100vh; position: relative; overflow-x: hidden;
+  }
+  .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .85; filter: drop-shadow(0 6px 0 #ffffff55); z-index: 0; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 55%; height: 140%; left: 12%; top: -60%; }
+  .cloud::after { width: 40%; height: 110%; right: 14%; top: -40%; }
+  .c1 { width: 150px; height: 40px; top: 70px; left: 6%; animation: drift 38s linear infinite alternate; }
+  .c2 { width: 110px; height: 30px; top: 150px; right: 8%; animation: drift 46s linear infinite alternate-reverse; }
+  @media (prefers-color-scheme: dark) { .cloud { display: none; } }
+  @keyframes drift { to { transform: translateX(40px); } }
+  .wrap { position: relative; z-index: 1; max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.1rem 0; }
+  .hero { text-align: center; }
+  .flock { display: flex; justify-content: center; gap: min(.35rem, 1vw); margin-bottom: .2rem; }
+  .flock img { width: min(68px, 15vw); height: auto; animation: hop 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+  .flock img:nth-child(2) { animation-delay: .15s; } .flock img:nth-child(3) { animation-delay: .3s; }
+  .flock img:nth-child(4) { animation-delay: .45s; } .flock img:nth-child(5) { animation-delay: .6s; }
+  .flock img:nth-child(6) { animation-delay: .75s; } .flock img:nth-child(7) { animation-delay: .9s; }
+  @keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-14px) scale(1.04, .97); } }
+  @media (prefers-reduced-motion: reduce) { .flock img, .cloud { animation: none; } }
+  .logo { font-size: clamp(2.6rem, 11vw, 4rem); font-weight: 900; letter-spacing: .01em; margin: 0; line-height: 1.1; text-shadow: 0 3px 0 #0003; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; }
+  @media (prefers-color-scheme: dark) { .logo { -webkit-text-stroke: 0; } }
+  .logo span:nth-child(1) { color: #ff5a6e; } .logo span:nth-child(2) { color: #ff9a2e; }
+  .logo span:nth-child(3) { color: #ffd23f; } .logo span:nth-child(4) { color: #36c97a; }
+  .logo span:nth-child(5) { color: #2ec4c4; } .logo span:nth-child(6) { color: #3a86ff; }
+  .logo span:nth-child(7) { color: #9b5cff; } .logo span:nth-child(8) { color: #c45cff; }
+  .logo span:nth-child(9) { color: #ff5a6e; } .logo span:nth-child(10) { color: #ff9a2e; }
+  .logo span:nth-child(11) { color: #ffd23f; } .logo span:nth-child(12) { color: #36c97a; }
+  .logo .gap { display: inline-block; width: .3em; }
+  .sub { font-weight: 800; font-size: 1.15rem; margin: .3rem 0 1rem; }
+  .lang { display: inline-flex; gap: .5rem; margin-bottom: 1.4rem; }
+  .lang a {
+    background: var(--accent); color: #fff; text-decoration: none; font-weight: 800;
+    padding: .45rem 1.3rem; border-radius: 999px; box-shadow: 0 4px 0 var(--accent-dark);
+  }
+  .lang a:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-dark); }
+  section {
+    background: var(--card); border-radius: 26px; padding: 1.6rem 1.5rem 1.2rem;
+    box-shadow: 0 8px 0 #0000001a, 0 18px 40px #0000001f; margin-bottom: 2rem;
+  }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 .4rem; font-weight: 900; }
+  h2 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; font-weight: 900; display: flex; align-items: center; gap: .55rem; }
+  h2::before { content: ""; width: .75rem; height: .75rem; border-radius: 30%; background: var(--c, #36c97a); box-shadow: inset 0 -3px 0 #0003; flex: none; }
+  h2:nth-of-type(6n+1) { --c: #ff5a6e; } h2:nth-of-type(6n+2) { --c: #ff9a2e; } h2:nth-of-type(6n+3) { --c: #ffd23f; }
+  h2:nth-of-type(6n+4) { --c: #36c97a; } h2:nth-of-type(6n+5) { --c: #3a86ff; } h2:nth-of-type(6n) { --c: #9b5cff; }
+  p, li { margin: 0 0 .85rem; font-weight: 500; }
+  a { color: var(--accent-dark); }
+  @media (prefers-color-scheme: dark) { a { color: var(--accent); } }
+  .meta { color: var(--muted); font-size: .92rem; margin-bottom: 1.2rem; }
+  .callout {
+    background: var(--surface); border: 3px solid var(--accent); border-radius: 20px;
+    padding: 1rem 1.15rem; margin: 1.2rem 0; position: relative;
+  }
+  .callout p { margin: 0; font-weight: 700; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
+  .hills { position: relative; z-index: 1; height: 90px; margin-top: 1rem; overflow: hidden; }
+  .hills::before, .hills::after { content: ""; position: absolute; border-radius: 50% 50% 0 0; bottom: 0; }
+  .hills::before { left: -20%; width: 90%; height: 160px; background: var(--hill2); }
+  .hills::after { right: -25%; width: 85%; height: 120px; background: var(--hill1); }
+  footer { position: relative; z-index: 2; text-align: center; color: #123d22; font-weight: 700; font-size: .9rem; padding: .4rem 1rem 2rem; background: var(--hill1); }
+  @media (prefers-color-scheme: dark) { footer { color: #eef1ff; } }
+</style>
+</head>
+<body>
+<div class="cloud c1"></div><div class="cloud c2"></div>
+<main class="wrap">
+  <header class="hero">
+    <div class="flock" aria-hidden="true">
+      <img src="fox.png" alt=""><img src="chick.png" alt=""><img src="ladybug.png" alt=""><img src="turtle.png" alt=""><img src="penguin.png" alt="">
+    </div>
+    <p class="logo" aria-label="Sleepy Flock"><span>S</span><span>L</span><span>E</span><span>E</span><span>P</span><span>Y</span><i class="gap"></i><span>F</span><span>L</span><span>O</span><span>C</span><span>K</span></p>
+    <p class="sub">Support</p>
+    <p class="lang"><a href="#da">Dansk</a><a href="#en">English</a></p>
+  </header>
+  <section id="da" lang="da">
+  <h1>Support for Sleepy Flock</h1>
+  <p class="meta">Spillet <strong>Sleepy Flock</strong> til iPhone · <a href="privacy-policy.html">Privatlivspolitik</a></p>
+  <div class="callout"><p><strong>Brug for hjælp eller har du en idé?</strong> Skriv til <a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a>, så svarer jeg så hurtigt, jeg kan.</p></div>
+  <h2>Sådan spiller du</h2>
+  <p>Træk fingeren for at sigte, og slip for at skyde kuglen ned mellem pindene. Hver pind, kuglen rammer, lyser op og forsvinder, når kuglen er ude. Væk alle de sovende dyr for at klare banen. Du har ti kugler.</p>
+  <h2>Gode at vide</h2>
+  <p>Jo flere dyr du har vækket, jo mere er hvert træf værd (×2, ×3, ×5, ×10). Lander kuglen i den bevægelige rede i bunden, får du den igen. Frøen hopper ud som en ekstra kugle, og katten giver ekstra point og flytter sig hvert skud. Når det sidste dyr vågner, går festen i gang, og kuglen lander i et bonusfelt.</p>
+  <h2>Områderne</h2>
+  <p>Rejsen går gennem fem områder med fire baner hver: ræve på engen, kyllinger på gården, mariehøns i haven, skildpadder ved dammen og pingviner ved isen. Næste bane åbner, når du har klaret den før.</p>
+  <h2>Mine baner er væk</h2>
+  <p>Klarede baner og bedste point gemmes på din enhed. Sletter du spillet uden backup, forsvinder de.</p>
+  <h2>"Support the developer"</h2>
+  <p>Det er et frivilligt tip. Det låser ikke noget op, og spillet er det samme uden. Er et køb gået galt, kan du bede om refundering hos Apple på <a href="https://reportaproblem.apple.com" rel="noopener">reportaproblem.apple.com</a>. Skriv gerne også til mig.</p>
+  <h2>Reklamer og data</h2>
+  <p>Ingen reklamer, ingen konto og ingen sporing. Læs hele <a href="privacy-policy.html">privatlivspolitikken</a>.</p>
+  <h2>Kontakt</h2>
+  <p><a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a><br>Kristoffer Johansen, Danmark</p>
+  </section>
+  <section id="en" lang="en">
+  <h1>Support for Sleepy Flock</h1>
+  <p class="meta">The game <strong>Sleepy Flock</strong> for iPhone · <a href="privacy-policy.html#en">Privacy policy</a></p>
+  <div class="callout"><p><strong>Need help or have an idea?</strong> Email <a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a> and I will reply as soon as I can.</p></div>
+  <h2>How to play</h2>
+  <p>Drag to aim and let go to shoot the ball down between the pegs. Every peg the ball hits lights up and disappears once the ball is out. Wake all the sleeping animals to clear the level. You have ten balls.</p>
+  <h2>Good to know</h2>
+  <p>The more animals you have woken, the more each hit is worth (×2, ×3, ×5, ×10). Land the ball in the moving nest at the bottom to get it back. The frog jumps out as an extra ball, and the cat is worth extra and moves every shot. When the last animal wakes up, the party starts and the ball lands in a bonus slot.</p>
+  <h2>The areas</h2>
+  <p>The journey goes through five areas of four levels each: foxes in the meadow, chicks on the farm, ladybugs in the garden, turtles by the pond and penguins by the ice. The next level opens when you have cleared the one before.</p>
+  <h2>My levels are gone</h2>
+  <p>Cleared levels and best scores are saved on your device. Deleting the game without a backup removes them.</p>
+  <h2>"Support the developer"</h2>
+  <p>This is a voluntary tip. It unlocks nothing, and the game is the same without it. If a purchase went wrong, you can request a refund from Apple at <a href="https://reportaproblem.apple.com" rel="noopener">reportaproblem.apple.com</a>. Feel free to email me too.</p>
+  <h2>Ads and data</h2>
+  <p>No ads, no account and no tracking. Read the full <a href="privacy-policy.html#en">privacy policy</a>.</p>
+  <h2>Contact</h2>
+  <p><a href="mailto:app@kristoffer.dk">app@kristoffer.dk</a><br>Kristoffer Johansen, Denmark</p>
+  </section>
+
+</main>
+<div class="hills" aria-hidden="true"></div>
+<footer>Sleepy Flock (<code>dk.kristoffer.sleepyflock</code>) · Kristoffer Johansen · 20. oktober 2026 · Ingen reklamer. Aldrig. / No ads. Ever.</footer>
+</body>
+</html>
