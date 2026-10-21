@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a1820">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kristoffer — spil og apps">
-<meta property="og:description" content="Ammehjerne, Block Amok, Jawsome og mere.">
+<meta property="og:description" content="Ammehjerne, Block Amok, Flockies og mere.">
 <meta property="og:url" content="https://kristoffer.dk/">
 <meta property="og:image" content="https://kristoffer.dk/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -186,6 +186,10 @@ main { position: relative; z-index: 2; background: var(--bg); margin-top: -1px; 
 .c-sf .media-flock { background: linear-gradient(180deg, #3a2c8c 0%, #7e6cc9 45%, #ff9e7a 100%); }
 .c-sf .media-flock::before { content: ""; position: absolute; width: 90px; height: 90px; right: 9%; top: 9%; border-radius: 50%; box-shadow: -18px 14px 0 0 #fff2c4; transform: rotate(-20deg); }
 
+/* Block Amok — reuses the Flockies card, phones left, the farm's blue sky and green grass */
+.c-wide.c-flock.c-ba { flex-direction: row; --accent: #ffcf3a; }
+.c-ba .media-flock { background: linear-gradient(180deg, #1f6fd0 0%, #5fb4f2 50%, #7fd66b 50.3%, #4ea83a 100%); }
+
 /* hover previews: a muted clip over the middle phone */
 .phone .pv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; pointer-events: none; }
 .card.playing .phone .pv { opacity: 1; }
@@ -270,7 +274,7 @@ footer a:hover { color: var(--ink); }
   .c-wide.c-amme .phone.p1 { margin-left: -90px; top: 40px; } .c-wide.c-amme .phone.p2 { margin-left: -225px; top: 90px; } .c-wide.c-amme .phone.p3 { margin-left: 65px; top: 90px; }
   .c-wide.c-amme .info { padding: 26px 22px 28px; }
   .c-wide.c-amme .head h3 { font-size: 1.8rem; }
-  .c-wide.c-flock, .c-wide.c-flock.c-ff { flex-direction: column; min-height: 0; }
+  .c-wide.c-flock, .c-wide.c-flock.c-ff, .c-wide.c-flock.c-ba { flex-direction: column; min-height: 0; }
   .c-wide.c-flock .media-flock { flex: none; height: 330px; min-height: 0; }
   .c-wide.c-flock .phone { width: 180px; bottom: -40px; } .c-wide.c-flock .phone.p2, .c-wide.c-flock .phone.p3 { width: 160px; }
   .c-wide.c-flock .phone.p1 { margin-left: -90px; top: 40px; } .c-wide.c-flock .phone.p2 { margin-left: -225px; top: 90px; } .c-wide.c-flock .phone.p3 { margin-left: 65px; top: 90px; }
@@ -388,29 +392,24 @@ footer a:hover { color: var(--ink); }
         </div>
       </article>
 
-      <!-- Block Amok -->
-      <article class="card c-half c-block">
-        <div class="media-block">
-          <div class="slides" data-par=".08">
-            <img class="on" src="img/blockamok-1.jpg" alt="Block Amok: skyd strukturerne ned" loading="lazy">
-            <img src="img/blockamok-2.jpg" alt="" loading="lazy">
-            <img src="img/blockamok-3.jpg" alt="" loading="lazy">
-          </div>
+      <!-- Block Amok (the remake, coming soon) -->
+      <article class="card c-wide c-flock c-ba">
+        <div class="media-flock" data-par=".06">
+          <div class="phone p2"><img src="img/blockamok-new-1.jpg" alt="Block Amok: piratskibet i Pirate Cove" loading="lazy"></div>
+          <div class="phone p3"><img src="img/blockamok-new-3.jpg" alt="Block Amok: Blitz-bonusrunden med discokugle" loading="lazy"></div>
+          <div class="phone p1"><img src="img/blockamok-new-2.jpg" alt="Block Amok: et kraftskud vælter tårnet" loading="lazy"><video class="pv" data-src="video/blockamok-preview.mp4?v=1" muted loop playsinline preload="none" aria-hidden="true"></video></div>
         </div>
         <div class="info">
           <div class="head">
-            <div class="icon"><img src="img/blockamok-icon.jpg" alt="" width="72" height="72"></div>
-            <div><h3>Block Amok</h3><small>iPhone, iPad &amp; Android · actionpuslespil</small></div>
+            <div class="icon"><img src="img/blockamok-icon.jpg" alt="" width="72" height="72" loading="lazy"></div>
+            <div><h3>Block Amok<span class="tag">Coming soon</span></h3><small>iPhone · actionpuslespil</small></div>
           </div>
-          <p>Skyd bygninger og papkøer, til de falder sammen. Kør et sjovt køretøj og brug fåre-kræfter — din får-makker hepper på dig.</p>
-          <div class="btns">
-            <a class="btn" href="https://apps.apple.com/dk/app/block-amok/id1456256040" target="_blank" rel="noopener">App Store <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
-            <a class="btn ghost" href="https://play.google.com/store/apps/details?id=com.ALLCAPS.Block_Amok" target="_blank" rel="noopener">Google Play <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
-          </div>
+          <p>Skyd tårnene ned med kanonvogn, damptog, tank eller raketbil. Rejs fra gården gennem elleve verdener med hvert sit twist: skyd piratskibets flag, så fyrer det en bredside, eller ram stormskyen, så slår lynet ned. Dit får rider med, og dit eventyr starter i dets verden.</p>
+          <p class="soon">Den nye version kommer snart i App Store.</p>
         </div>
       </article>
 
-      <!-- Jawsome -->
+      <!-- Jawsome: hidden 2026-10-21 (Kristoffer). Remove the comment marks to show it again.
       <article class="card c-half c-jawsome">
         <div class="media-block">
           <div class="slides" data-par=".08">
@@ -428,6 +427,7 @@ footer a:hover { color: var(--ink); }
           <a class="btn" href="https://play.google.com/store/apps/details?id=com.Allcaps.Jawsome" target="_blank" rel="noopener">Google Play <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
         </div>
       </article>
+      -->
 
       <!-- Disco Flip -->
       <article class="card c-wide c-disco">
