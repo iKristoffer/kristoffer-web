@@ -193,6 +193,9 @@ main { position: relative; z-index: 2; background: var(--bg); margin-top: -1px; 
 /* hover previews: a muted clip over the middle phone */
 .phone .pv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; pointer-events: none; }
 .card.playing .phone .pv { opacity: 1; }
+/* a clip with a landscape part (video data-land="start,end", s): the phone turns on its side for it */
+.phone.p1 { transition: transform .35s cubic-bezier(.3, .7, .3, 1); }
+.phone.p1.land { transform: translateY(-60px) rotate(90deg) scale(.82); z-index: 3; }
 
 /* Block Amok — slideshow */
 .c-block { --accent: #7fd66b; }
@@ -397,7 +400,7 @@ footer a:hover { color: var(--ink); }
         <div class="media-flock" data-par=".06">
           <div class="phone p2"><img src="img/blockamok-new-1.jpg" alt="Block Amok: piratskibet i Pirate Cove" loading="lazy"></div>
           <div class="phone p3"><img src="img/blockamok-new-3.jpg" alt="Block Amok: Blitz-bonusrunden med discokugle" loading="lazy"></div>
-          <div class="phone p1"><img src="img/blockamok-new-2.jpg" alt="Block Amok: et kraftskud vælter tårnet" loading="lazy"><video class="pv" data-src="video/blockamok-preview.mp4?v=2" muted loop playsinline preload="none" aria-hidden="true"></video></div>
+          <div class="phone p1"><img src="img/blockamok-new-2.jpg" alt="Block Amok: et kraftskud vælter tårnet" loading="lazy"><video class="pv" data-src="video/blockamok-preview.mp4?v=3" data-land="9.10,15.70" muted loop playsinline preload="none" aria-hidden="true"></video></div>
         </div>
         <div class="info">
           <div class="head">
@@ -560,14 +563,31 @@ footer a:hover { color: var(--ink); }
   /* hover previews: play on hover (mouse), or while the card is in view (touch) */
   if (!reduce) {
     const cards = [...document.querySelectorAll('.card')].filter(c => c.querySelector('video.pv'));
+    // A landscape part: the phone turns 0.35 s before the cut (as a phone turns before its
+    // screen does), and back 0.35 s before the clip goes portrait again.
+    const turn = (c, v) => {
+      const land = (v.dataset.land || '').split(',').map(Number);
+      if (land.length !== 2) return;
+      const ph = v.closest('.phone');
+      const tick = () => {
+        if (v.paused) return;
+        const t = v.currentTime;
+        ph.classList.toggle('land', t >= land[0] - .35 && t < land[1] - .35);
+        c._turn = requestAnimationFrame(tick);
+      };
+      cancelAnimationFrame(c._turn);
+      c._turn = requestAnimationFrame(tick);
+    };
     const start = c => {
       const v = c.querySelector('video.pv');
       if (!v.src) v.src = v.dataset.src;
-      v.onplaying = () => c.classList.add('playing');
+      v.onplaying = () => { c.classList.add('playing'); turn(c, v); };
       v.play().catch(() => {});
     };
     const stop = c => {
       const v = c.querySelector('video.pv');
+      cancelAnimationFrame(c._turn);
+      v.closest('.phone').classList.remove('land');
       c.classList.remove('playing');
       v.pause();
       setTimeout(() => { if (!c.classList.contains('playing')) v.currentTime = 0; }, 400);
