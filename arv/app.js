@@ -792,14 +792,35 @@ function uploadSection() {
     picker, summary, list, upload, status, report);
 }
 
+// Til test: sletter valg. target = null betyder alle.
+async function resetVotes(target, name) {
+  const who = target ? `${name}s valg` : "ALLES valg";
+  if (!confirm(`Slet ${who}? Det kan ikke fortrydes.`)) return;
+  try {
+    await must(db.rpc("reset_votes", { target }));
+    state.queue = null;
+    await refresh();
+  } catch (err) {
+    fail(err);
+  }
+}
+
 function progressSection() {
+  const anyVotes = state.progress.some((p) => p.voted > 0);
   return h("section", { class: "section" },
     h("h2", { text: "Hvor langt er folk?" }),
     h("table", { class: "table" },
       h("tbody", {}, state.progress.map((p) =>
         h("tr", {},
           h("td", { text: p.display_name }),
-          h("td", { text: `${p.voted} af ${p.total}` }))))));
+          h("td", { text: `${p.voted} af ${p.total}` }),
+          h("td", {}, p.voted > 0
+            ? h("button", { class: "small", text: "Nulstil", onclick: () => resetVotes(p.user_id, p.display_name) })
+            : null))))),
+    anyVotes
+      ? h("div", { class: "actions" },
+          h("button", { text: "Nulstil alles valg", onclick: () => resetVotes(null) }))
+      : null);
 }
 
 function phaseSection() {
@@ -815,6 +836,7 @@ function phaseSection() {
   const close = act("close_voting");
   const reopen = act("reopen_voting");
   const draw = act("run_draw");
+  const resetDraw = act("reset_draw");
 
   const missing = state.progress.filter((p) => p.voted < p.total);
   const buttons = [];
@@ -843,7 +865,15 @@ function phaseSection() {
         onclick: () => { if (confirm("Genåbn afstemningen? Stemmerne bliver skjult igen.")) reopen(); },
       }));
   } else {
-    buttons.push(h("button", { text: "Hent resultat som regneark", onclick: downloadCsv }));
+    buttons.push(
+      h("button", { text: "Hent resultat som regneark", onclick: downloadCsv }),
+      // Kun til test; fjernes sammen med reset_draw() i databasen før den rigtige lodtrækning.
+      h("button", {
+        text: "Nulstil lodtrækningen",
+        onclick: () => {
+          if (confirm("Slet resultatet og gå tilbage til lukket afstemning? Stemmerne bevares, og der kan trækkes igen.")) resetDraw();
+        },
+      }));
   }
 
   const label = { voting: "Afstemningen er åben.", closed: "Afstemningen er lukket. Lodtrækningen er ikke kørt.", drawn: "Lodtrækningen er kørt." };
